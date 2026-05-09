@@ -401,8 +401,10 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
   <div id="unlock-box">
     <h3>🔐 ACCESO</h3>
     <p>Introduce la contraseña para interactuar</p>
-    <input id="unlock-input" type="password" placeholder="••••••" maxlength="20"
-      onkeydown="if(event.key==='Enter')submitUnlock()">
+    <input id="unlock-input" type="text" inputmode="text"
+      autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+      placeholder="Contraseña" maxlength="30"
+      style="-webkit-text-security:disc">
     <button id="unlock-submit" onclick="submitUnlock()">ENTRAR</button>
     <div id="unlock-error">Contraseña incorrecta</div>
   </div>
@@ -434,8 +436,8 @@ const WILDCARD_BALLS = [5, 15, 20];
 
 // Milestones por categoría
 const MILESTONES = {
-  continuas_done: { emoji:'🎊', title:'¡CONTINUAS COMPLETADAS!', text:'Has superado todas las pruebas continuas. El grupo está impresionado. Pero esto no ha hecho más que empezar…' },
-  dia1_done:      { emoji:'🌙', title:'¡DÍA 1 COMPLETADO!',      text:'Has sobrevivido el primer día. Descansa… si puedes. Mañana viene lo bueno.' },
+  continuas_done: { emoji:'🎊', title:'¡CONTINUAS DESBLOQUEADAS!', text:'¡Enhorabuena! Has desbloqueado todas las pruebas continuas. El grupo está impresionado. Pero esto no ha hecho más que empezar…' },
+  dia1_done:      { emoji:'🌙', title:'¡DÍA 1 DESBLOQUEADO!',      text:'¡Enhorabuena! Has desbloqueado todas las pruebas del primer día. Descansa… si puedes. Mañana viene lo bueno.' },
   all_done:       { emoji:'🏆', title:'¡TODAS DESBLOQUEADAS!',   text:'Has desbloqueado las 30 pruebas. Eres un auténtico candidato a casarte con la Puri.' },
 };
 
@@ -471,11 +473,23 @@ let rouletteResult = null;
 ══════════════════════════════════════════════════ */
 function showUnlock() {
   if (!document.body.classList.contains('locked')) return;
-  document.getElementById('unlock-overlay').classList.add('show');
-  setTimeout(()=>document.getElementById('unlock-input').focus(), 100);
+  const overlay = document.getElementById('unlock-overlay');
+  const input = document.getElementById('unlock-input');
+  overlay.classList.add('show');
+  input.value = '';
+  document.getElementById('unlock-error').style.display = 'none';
+  // En iOS el focus solo funciona desde un gesto directo — intentarlo igualmente
+  try { input.focus(); } catch(e) {}
 }
+// listener del input — se añade una vez en init
+function initUnlockInput() {
+  const inp = document.getElementById('unlock-input');
+  inp.addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); submitUnlock(); }});
+  inp.addEventListener('keyup',   e => { if(e.key==='Enter'){ e.preventDefault(); submitUnlock(); }});
+}
+
 function submitUnlock() {
-  const val = document.getElementById('unlock-input').value;
+  const val = document.getElementById('unlock-input').value.trim();
   if (val === INTERACTION_PASSWORD) {
     document.body.classList.remove('locked');
     document.getElementById('unlock-overlay').classList.remove('show');
@@ -492,9 +506,19 @@ function submitUnlock() {
 /* ══════════════════════════════════════════════════
    WELCOME
 ══════════════════════════════════════════════════ */
+function setWelcomeSeen() {
+  try { localStorage.setItem('puricup_welcome_seen','1'); } catch(e){}
+  // Cookie de 1 año como fallback para Safari iOS
+  const d = new Date(); d.setFullYear(d.getFullYear()+1);
+  document.cookie = 'puricup_welcome=1;expires='+d.toUTCString()+';path=/;SameSite=Lax';
+}
+function getWelcomeSeen() {
+  try { if(localStorage.getItem('puricup_welcome_seen')) return true; } catch(e){}
+  return document.cookie.split(';').some(c=>c.trim().startsWith('puricup_welcome=1'));
+}
 function closeWelcome() {
   document.getElementById('welcome-overlay').classList.remove('show');
-  sessionStorage.setItem('welcome_seen','1');
+  setWelcomeSeen();
 }
 
 /* ══════════════════════════════════════════════════
@@ -784,7 +808,7 @@ function tryGrab(){
   const cy=CY+8+wireLen+20;
   const rem=remainingCount();
   // dificultad más baja cuando quedan pocas bolas
-  const threshold = rem <= 10 ? 0.08 : 0.22;
+  const threshold = 0.0; // si toca la bola, la coge siempre
   let best=null,bd=9999;
   for(const b of balls){
     if(b.grabbed)continue;
@@ -890,8 +914,9 @@ function openBall(ballEl, prueba){
   setTimeout(()=>{burst.style.display='none';},550);
   setTimeout(()=>{
     waiting.style.display='none';
-    buildCardFace(document.getElementById('cf-front'),prueba,false); // reverso
-    buildCardFace(document.getElementById('cf-back'),prueba,true);   // frontal (prueba)
+    buildCardFace(document.getElementById('cf-front'),prueba,false); // reverso en la cara frontal (visible SIN girar)
+    buildCardFace(document.getElementById('cf-back'),prueba,true);   // prueba en la cara trasera (visible AL girar)
+    card3d.classList.remove('flipped'); // empieza sin girar → se ve el reverso
     scene.style.display='block';
     hint.style.display='block';
     hint.textContent='Toca la carta para ver la prueba →';
@@ -901,7 +926,9 @@ function openBall(ballEl, prueba){
 
 function buildCardFace(el, prueba, isFront){
   el.innerHTML='';
-  el.className='card-face'+(isFront?'':' card-back-face');
+  // isFront=true → prueba (cara trasera, visible al girar) → card-back-face
+  // isFront=false → reverso (cara frontal, visible sin girar) → sin clase extra
+  el.className='card-face'+(isFront?' card-back-face':'');
   const meta=CAT[prueba.categoria]||CAT.continuas;
 
   if(!isFront){
@@ -974,14 +1001,14 @@ function renderPanel(){
       body.appendChild(catTag);body.appendChild(emo);body.appendChild(tit);body.appendChild(dsc);
       body.style.cursor='pointer';
       body.onclick=()=>{
-        buildCardFace(document.getElementById('cf-front'),p,false);
-        buildCardFace(document.getElementById('cf-back'),p,true);
-        document.getElementById('card-3d').classList.add('flipped');
+        buildCardFace(document.getElementById('cf-front'),p,false); // reverso en frontal
+        buildCardFace(document.getElementById('cf-back'),p,true);    // prueba en trasera
+        document.getElementById('card-3d').classList.add('flipped'); // ya vista → mostrar prueba directamente
         document.getElementById('waiting-msg').style.display='none';
         document.getElementById('ball-burst').style.display='none';
         document.getElementById('card-scene').style.display='block';
         document.getElementById('flip-hint').style.display='block';
-        document.getElementById('flip-hint').textContent='Toca para volver al reverso ←';
+        document.getElementById('flip-hint').textContent='Toca para ver el reverso ←';
         document.getElementById('card-close').classList.add('show');
         document.getElementById('card-overlay').classList.add('show');
       };
@@ -1234,9 +1261,10 @@ async function init(){
     updateStats();renderPanel();
     document.getElementById('loading').classList.add('hidden');
     // mostrar welcome si es primera vez en esta sesión
-    if(!sessionStorage.getItem('welcome_seen')){
+    if(!getWelcomeSeen()){
       setTimeout(()=>document.getElementById('welcome-overlay').classList.add('show'),400);
     }
+    initUnlockInput();
     requestAnimationFrame(gameLoop);
   }catch(e){
     document.getElementById('loading').innerHTML=`<h2 style="color:var(--neon)">ERROR</h2><p style="color:var(--txt2)">${e.message}</p>`;
