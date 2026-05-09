@@ -139,7 +139,7 @@ app.patch('/api/pruebas/:id/completar', async (req, res) => {
 app.post('/api/reset', async (req, res) => {
   try {
     const { clave } = req.body;
-    if (clave !== (process.env.RESET_KEY || 'despedida2025')) {
+    if (clave !== (process.env.RESET_KEY || 'LAPURI')) {
       return res.status(403).json({ error: 'Clave incorrecta.' });
     }
     await pool.query('UPDATE pruebas SET extraida=false, completada=false');

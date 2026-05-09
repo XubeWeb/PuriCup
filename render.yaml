@@ -8,4 +8,4 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: RESET_KEY
-        value: despedida2025
+        value: LAPURI
