@@ -4,12 +4,8 @@ services:
     env: node
     buildCommand: npm install
     startCommand: npm start
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 1
     envVars:
-      - key: RENDER
-        value: true
+      - key: DATABASE_URL
+        sync: false
       - key: RESET_KEY
         value: despedida2025
