@@ -12,283 +12,36 @@ const pool = new Pool({
 });
 
 const PRUEBAS_SEED = [
-  // 🔁 CONTINUAS
-  {
-    id:1,
-    orden:1,
-    categoria:'continuas',
-    titulo:'Cuidar de La Puri',
-    descripcion:'Debes mantener a La Puri contigo TODO el finde sin perderla.',
-    emoji:'👰'
-  },
-  {
-    id:2,
-    orden:2,
-    categoria:'continuas',
-    titulo:'Encontrar nombres del grupo',
-    descripcion:'Debes encontrar personas que se llamen como los miembros del grupo. Se permite 1 comodín.',
-    emoji:'🪪'
-  },
-  {
-    id:3,
-    orden:3,
-    categoria:'continuas',
-    titulo:'30 vídeos Viva La Puri',
-    descripcion:'Debes conseguir 30 personas diferentes diciendo en vídeo “VIVA LA PURI”.',
-    emoji:'🎥'
-  },
-  {
-    id:4,
-    orden:4,
-    categoria:'continuas',
-    titulo:'3 chupitos invitados',
-    descripcion:'Debes conseguir que 3 personas diferentes te inviten a un chupito.',
-    emoji:'🥃'
-  },
-  {
-    id:5,
-    orden:5,
-    categoria:'continuas',
-    titulo:'Foto con 5 calvos',
-    descripcion:'Debes conseguir una foto brindando con 5 personas calvas.',
-    emoji:'🦲'
-  },
-  {
-    id:6,
-    orden:6,
-    categoria:'continuas',
-    titulo:'Foto con despedidas',
-    descripcion:'Debes hacerte una foto con 3 despedidas distintas.',
-    emoji:'📸'
-  },
-  {
-    id:7,
-    orden:7,
-    categoria:'continuas',
-    titulo:'Objeto random',
-    descripcion:'Debes conseguir que alguien te regale un objeto y conservarlo hasta el final del finde.',
-    emoji:'🎁'
-  },
-  {
-    id:8,
-    orden:8,
-    categoria:'continuas',
-    titulo:'Firma de famoso',
-    descripcion:'Debes conseguir que alguien finja ser famoso y te firme la camiseta o disfraz.',
-    emoji:'✍️'
-  },
-  {
-    id:9,
-    orden:9,
-    categoria:'continuas',
-    titulo:'Selfie infiltrado x5',
-    descripcion:'Debes colarte en 5 fotos distintas de grupos de desconocidos.',
-    emoji:'🤳'
-  },
-  {
-    id:10,
-    orden:10,
-    categoria:'continuas',
-    titulo:'Trabajando en fin de semana',
-    descripcion:'Debes encontrar 20 detalles constructivos mal resueltos por la ciudad, marcarlos con gommets rojos y hacer foto para el reporte final.',
-    emoji:'🚧'
-  },
-
-  // 🍺 DÍA 1
-  {
-    id:11,
-    orden:11,
-    categoria:'dia1',
-    titulo:'Elección de bebida',
-    descripcion:'Un desconocido decidirá qué bebida vas a tomar.',
-    emoji:'🍺'
-  },
-  {
-    id:12,
-    orden:12,
-    categoria:'dia1',
-    titulo:'Intercambio de bebida',
-    descripcion:'Debes convencer a alguien para intercambiar bebidas contigo.',
-    emoji:'🍻'
-  },
-  {
-    id:13,
-    orden:13,
-    categoria:'dia1',
-    titulo:'Entrevista absurda',
-    descripcion:'Debes entrevistar a un desconocido como si fuera famoso.',
-    emoji:'🎤'
-  },
-  {
-    id:14,
-    orden:14,
-    categoria:'dia1',
-    titulo:'Poema a la cerveza',
-    descripcion:'Debes improvisar un poema dramático dedicado a la cerveza delante de gente.',
-    emoji:'📜'
-  },
-  {
-    id:15,
-    orden:15,
-    categoria:'dia1',
-    titulo:'Confesión pública',
-    descripcion:'Debes contar la historia más vergonzosa de tu vida.',
-    emoji:'😳'
-  },
-  {
-    id:16,
-    orden:16,
-    categoria:'dia1',
-    titulo:'Discurso callejero',
-    descripcion:'Debes parar a un grupo y dar un discurso improvisado durante al menos 30 segundos.',
-    emoji:'📢'
-  },
-  {
-    id:17,
-    orden:17,
-    categoria:'dia1',
-    titulo:'Día caluroso',
-    descripcion:'Debes conseguir 3 gafas o 3 gorras prestadas y hacerte una foto con todas puestas a la vez.',
-    emoji:'🧢'
-  },
-  {
-    id:18,
-    orden:18,
-    categoria:'dia1',
-    titulo:'Brindis épico',
-    descripcion:'Debes ponerte visible y hacer un discurso de brindis delante del bar.',
-    emoji:'🥂'
-  },
-  {
-    id:19,
-    orden:19,
-    categoria:'dia1',
-    titulo:'DJ improvisado',
-    descripcion:'Debes conseguir que pongan “Me Rehuso”. Si fallas, el grupo elegirá canción.',
-    emoji:'🎧'
-  },
-  {
-    id:20,
-    orden:20,
-    categoria:'dia1',
-    titulo:'Coreografía grupal',
-    descripcion:'Debes encontrar a la persona que más raro baile y unirte.',
-    emoji:'🕺'
-  },
-  {
-    id:21,
-    orden:21,
-    categoria:'dia1',
-    titulo:'Conga humana',
-    descripcion:'Debes iniciar una conga y conseguir que se unan al menos 5 personas.',
-    emoji:'🐍'
-  },
-  {
-    id:22,
-    orden:22,
-    categoria:'dia1',
-    titulo:'Aplauso del local',
-    descripcion:'Debes conseguir que una gran parte del local te aplauda.',
-    emoji:'👏'
-  },
-  {
-    id:23,
-    orden:23,
-    categoria:'dia1',
-    titulo:'El rey de los chupitos',
-    descripcion:'Cada vez que alguien diga “Viva el novio”, deberás beber un trago.',
-    emoji:'👑'
-  },
-
-  // 🎾 DÍA 2
-  {
-    id:24,
-    orden:24,
-    categoria:'dia2',
-    titulo:'Un buen despertar',
-    descripcion:'Debes darte una ducha de agua fría de 2 minutos para empezar el día.',
-    emoji:'🚿'
-  },
-  {
-    id:25,
-    orden:25,
-    categoria:'dia2',
-    titulo:'Entrenamiento real',
-    descripcion:'Debes montar una pirámide humana de desconocidos siendo tú el vértice superior.',
-    emoji:'🏗️'
-  },
-  {
-    id:26,
-    orden:26,
-    categoria:'dia2',
-    titulo:'Personaje famoso',
-    descripcion:'Te escribirán un personaje en la frente y deberás adivinarlo preguntando solo a desconocidos.',
-    emoji:'🎭'
-  },
-  {
-    id:27,
-    orden:27,
-    categoria:'dia2',
-    titulo:'Bandeja nupcial',
-    descripcion:'Debes hacer 30 toques con un desconocido usando las raquetas y La Puri.',
-    emoji:'🎾'
-  },
-  {
-    id:28,
-    orden:28,
-    categoria:'dia2',
-    titulo:'Un puente para La Puri',
-    descripcion:'Debes alinear a 5 desconocidos y pasar a La Puri usando únicamente la barbilla.',
-    emoji:'🌉'
-  },
-  {
-    id:29,
-    orden:29,
-    categoria:'dia2',
-    titulo:'La guardería',
-    descripcion:'Debes convencer a un desconocido para que cuide de La Puri durante 15 minutos.',
-    emoji:'🍼'
-  },
-  {
-    id:30,
-    orden:30,
-    categoria:'dia2',
-    titulo:'La cara de La Puri',
-    descripcion:'Con los ojos vendados, debes recrear la cara de La Puri en la raqueta con pegatinas mientras un desconocido te guía.',
-    emoji:'👀'
-  },
-  {
-    id:31,
-    orden:31,
-    categoria:'dia2',
-    titulo:'Camarero de raqueta',
-    descripcion:'Debes traer bebidas usando la raqueta como bandeja sin sujetar el vaso con la mano.',
-    emoji:'🍹'
-  },
-  {
-    id:32,
-    orden:32,
-    categoria:'dia2',
-    titulo:'Brindis sobre raqueta',
-    descripcion:'Debes brindar con la bebida apoyada sobre la raqueta antes de beber.',
-    emoji:'🥂'
-  },
-  {
-    id:33,
-    orden:33,
-    categoria:'dia2',
-    titulo:'Karaoke con desconocidos',
-    descripcion:'Debes cantar una canción completa con al menos un desconocido usando la raqueta como micrófono.',
-    emoji:'🎤'
-  },
-  {
-    id:34,
-    orden:34,
-    categoria:'dia2',
-    titulo:'Autógrafo absurdo',
-    descripcion:'Debes conseguir un autógrafo de alguien “famoso”. Si no, alguien deberá firmarle la nalga a Richi o pedirle que firme una.',
-    emoji:'✍️'
-  },
+  { id:1,  orden:1,  categoria:'dia1',      titulo:'Beber de un cubo',         descripcion:'El novio debe beberse un cubo de sangría sin usar las manos.',                  emoji:'🪣' },
+  { id:2,  orden:2,  categoria:'dia1',      titulo:'Karaoke obligatorio',       descripcion:'Cantar "My Way" completo en el primer bar que encontréis. Sin excusas.',       emoji:'🎤' },
+  { id:3,  orden:3,  categoria:'dia1',      titulo:'Foto con desconocido',      descripcion:'Foto con alguien que no conocéis de nada. Tiene que salir sonriendo.',         emoji:'📸' },
+  { id:4,  orden:4,  categoria:'dia1',      titulo:'Chupito de la suerte',      descripcion:'El barman elige el chupito. Sin mirar qué es. Sin quejarse.',                  emoji:'🥃' },
+  { id:5,  orden:5,  categoria:'dia1',      titulo:'Tutu rosa toda la noche',   descripcion:'El novio lleva un tutu rosa el resto de la noche del día 1. Obligatorio.',     emoji:'🩱' },
+  { id:6,  orden:6,  categoria:'dia1',      titulo:'Ruleta de bebidas',         descripcion:'Cada uno pide una bebida diferente y se intercambian al azar entre todos.',    emoji:'🎡' },
+  { id:7,  orden:7,  categoria:'dia1',      titulo:'El discurso',               descripcion:'El novio da un discurso de 2 minutos sobre por qué merece casarse.',           emoji:'🎙️' },
+  { id:8,  orden:8,  categoria:'dia1',      titulo:'Tour a ciegas',             descripcion:'30 minutos con los ojos vendados guiado por el grupo. El grupo decide.',       emoji:'🙈' },
+  { id:9,  orden:9,  categoria:'dia1',      titulo:'Prueba de memoria',         descripcion:'Recita los nombres de todos los presentes de corrido. Si falla: chupito.',     emoji:'🧠' },
+  { id:10, orden:10, categoria:'dia1',      titulo:'Llamada misteriosa',        descripcion:'Llamar a alguien elegido por el grupo de sus contactos. En altavoz.',          emoji:'📞' },
+  { id:11, orden:11, categoria:'dia2',      titulo:'Maratón de barras',         descripcion:'Un chupito en cada bar de la calle principal. Sin saltarse ninguno.',          emoji:'🏃' },
+  { id:12, orden:12, categoria:'dia2',      titulo:'Chef del desayuno',         descripcion:'El novio prepara el desayuno para todos con lo que haya disponible.',          emoji:'👨‍🍳' },
+  { id:13, orden:13, categoria:'dia2',      titulo:'Actividad sorpresa',        descripcion:'Actividad elegida por el grupo: karts, pádel o lo que se vote en el momento.', emoji:'🏎️' },
+  { id:14, orden:14, categoria:'dia2',      titulo:'Confesión pública',         descripcion:'El novio cuenta la historia más vergonzosa de su vida. Con detalles.',         emoji:'😳' },
+  { id:15, orden:15, categoria:'dia2',      titulo:'Reto del agua fría',        descripcion:'Ducha de agua fría de 2 minutos. El grupo supervisa y cronometra.',            emoji:'🚿' },
+  { id:16, orden:16, categoria:'dia2',      titulo:'El artista',                descripcion:'Pintar un retrato de la novia en 5 minutos. Se envía a ella por WhatsApp.',    emoji:'🎨' },
+  { id:17, orden:17, categoria:'dia2',      titulo:'Compra misteriosa',         descripcion:'El novio compra un regalo de menos de 5€ para cada miembro del grupo.',        emoji:'🛍️' },
+  { id:18, orden:18, categoria:'dia2',      titulo:'Imitaciones',               descripcion:'Imitar a cada miembro del grupo 30 segundos. El grupo puntúa del 1 al 10.',    emoji:'🎭' },
+  { id:19, orden:19, categoria:'dia2',      titulo:'La propuesta',              descripcion:'Recrear cómo le pidió matrimonio a la novia. Dramatización total.',             emoji:'💍' },
+  { id:20, orden:20, categoria:'dia2',      titulo:'Noche del chef',            descripcion:'El novio invita a cenar. Él elige el restaurante. Paga él. Sin rechistar.',    emoji:'🍽️' },
+  { id:21, orden:21, categoria:'continuas', titulo:'Sin móvil 1 hora',          descripcion:'El novio deja el móvil al grupo durante 1 hora. Ellos gestionan todo.',        emoji:'📵' },
+  { id:22, orden:22, categoria:'continuas', titulo:'Rey de los shots',           descripcion:'Cada vez que alguien grita "¡Novio!" debe hacer un chupito inmediatamente.',   emoji:'👑' },
+  { id:23, orden:23, categoria:'continuas', titulo:'Prenda acumulada',           descripcion:'El novio lleva una prenda ridícula elegida por el grupo hasta medianoche.',    emoji:'🤡' },
+  { id:24, orden:24, categoria:'continuas', titulo:'Número de teléfono',         descripcion:'Conseguir el número de teléfono de 3 desconocidos distintos antes del final.', emoji:'📱' },
+  { id:25, orden:25, categoria:'continuas', titulo:'Fotógrafo oficial',          descripcion:'El novio hace de fotógrafo del grupo durante 2 horas sin descanso ni queja.',  emoji:'📷' },
+  { id:26, orden:26, categoria:'continuas', titulo:'El mensajero',               descripcion:'Entregar un mensaje escrito por el grupo a un desconocido en el siguiente bar.', emoji:'✉️' },
+  { id:27, orden:27, categoria:'continuas', titulo:'Siempre de pie',             descripcion:'El novio no puede sentarse en toda la noche del día 1. El grupo vigila.',      emoji:'🧍' },
+  { id:28, orden:28, categoria:'continuas', titulo:'El juez',                    descripcion:'El novio decide quién bebe en cada ronda durante 1 hora. Poder absoluto.',     emoji:'⚖️' },
+  { id:29, orden:29, categoria:'continuas', titulo:'Prohibido decir "novia"',    descripcion:'Si pronuncia la palabra "novia" en voz alta: chupito. Vale toda la despedida.', emoji:'🤐' },
+  { id:30, orden:30, categoria:'continuas', titulo:'El guardaespaldas',          descripcion:'Un miembro del grupo es su guardaespaldas durante 3 horas. Rol total.',        emoji:'🕴️' },
 ];
 
 async function initDB() {
