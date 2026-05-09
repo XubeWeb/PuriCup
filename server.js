@@ -56,7 +56,14 @@ async function initDB() {
         descripcion TEXT    NOT NULL,
         emoji       TEXT    NOT NULL DEFAULT '🎯',
         extraida    BOOLEAN NOT NULL DEFAULT false,
-        completada  BOOLEAN NOT NULL DEFAULT false
+        completada  BOOLEAN NOT NULL DEFAULT false,
+        uso_comodin BOOLEAN NOT NULL DEFAULT false
+      );
+      -- Añadir columna si no existe (por si la tabla ya estaba creada)
+      ALTER TABLE pruebas ADD COLUMN IF NOT EXISTS uso_comodin BOOLEAN NOT NULL DEFAULT false;
+      CREATE TABLE IF NOT EXISTS config (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
       );
     `);
 
@@ -118,8 +125,10 @@ app.post('/api/pruebas/:id/extraer', async (req, res) => {
 app.post('/api/pruebas/:id/unextract', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    await pool.query('UPDATE pruebas SET extraida=false, completada=false WHERE id=$1', [id]);
-    res.json({ ok: true });
+    const { rows } = await pool.query('SELECT uso_comodin FROM pruebas WHERE id=$1', [id]);
+    const tenia_comodin = rows[0] && rows[0].uso_comodin;
+    await pool.query('UPDATE pruebas SET extraida=false, completada=false, uso_comodin=false WHERE id=$1', [id]);
+    res.json({ ok: true, devolver_comodin: tenia_comodin });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -130,8 +139,13 @@ app.patch('/api/pruebas/:id/completar', async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM pruebas WHERE id=$1', [id]);
     if (!rows[0]) return res.status(404).json({ error: 'No encontrada.' });
     const nuevo = !rows[0].completada;
-    await pool.query('UPDATE pruebas SET completada=$1 WHERE id=$2', [nuevo, id]);
-    res.json({ ok: true, completada: nuevo });
+    // Si se está completando y se usó comodín, guardarlo; si se des-completa, limpiar
+    const comodin = nuevo ? (req.body && req.body.uso_comodin ? true : false) : false;
+    await pool.query(
+      'UPDATE pruebas SET completada=$1, uso_comodin=$2 WHERE id=$3',
+      [nuevo, comodin, id]
+    );
+    res.json({ ok: true, completada: nuevo, uso_comodin: comodin });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -143,6 +157,27 @@ app.post('/api/reset', async (req, res) => {
       return res.status(403).json({ error: 'Clave incorrecta.' });
     }
     await pool.query('UPDATE pruebas SET extraida=false, completada=false');
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/config/:key
+app.get('/api/config/:key', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM config WHERE key=$1', [req.params.key]);
+    if (!rows[0]) return res.status(404).json({ value: null });
+    res.json({ key: rows[0].key, value: rows[0].value });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/config
+app.post('/api/config', async (req, res) => {
+  try {
+    const { key, value } = req.body;
+    await pool.query(
+      'INSERT INTO config (key,value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=$2',
+      [key, value]
+    );
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

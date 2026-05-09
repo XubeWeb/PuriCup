@@ -184,7 +184,7 @@ canvas#c{display:block;width:100%;height:auto;border-radius:14px;
 #milestone-box button:hover{transform:scale(1.04)}
 
 /* WELCOME MODAL */
-#welcome-overlay{display:none;position:fixed;inset:0;z-index:500;
+#welcome-overlay{display:none;position:fixed;inset:0;z-index:9500;
   background:rgba(0,0,10,.95);align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(8px)}
 #welcome-overlay.show{display:flex}
 #welcome-box{background:#0d0d25;border:2px solid var(--gold);border-radius:22px;
@@ -232,7 +232,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
 #roulette-close:hover{border-color:var(--neon);color:var(--neon)}
 
 /* UNLOCK MODAL */
-#unlock-overlay{display:none;position:fixed;inset:0;z-index:600;
+#unlock-overlay{display:none;position:fixed;inset:0;z-index:9500;
   background:rgba(0,0,10,.95);align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)}
 #unlock-overlay.show{display:flex}
 #unlock-box{background:#0e0e2a;border:2px solid var(--neon);border-radius:20px;
@@ -507,14 +507,26 @@ function submitUnlock() {
    WELCOME
 ══════════════════════════════════════════════════ */
 function setWelcomeSeen() {
+  // Guardar en servidor (persiste en todos los dispositivos)
+  fetch('/api/config', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({key:'welcome_seen',value:'1'})
+  }).catch(()=>{});
+  // También local como backup
   try { localStorage.setItem('puricup_welcome_seen','1'); } catch(e){}
-  // Cookie de 1 año como fallback para Safari iOS
-  const d = new Date(); d.setFullYear(d.getFullYear()+1);
-  document.cookie = 'puricup_welcome=1;expires='+d.toUTCString()+';path=/;SameSite=Lax';
+  sessionStorage.setItem('puricup_welcome_seen','1');
 }
-function getWelcomeSeen() {
+async function getWelcomeSeen() {
+  // Primero comprobar local (más rápido)
   try { if(localStorage.getItem('puricup_welcome_seen')) return true; } catch(e){}
-  return document.cookie.split(';').some(c=>c.trim().startsWith('puricup_welcome=1'));
+  if(sessionStorage.getItem('puricup_welcome_seen')) return true;
+  // Luego preguntar al servidor
+  try {
+    const r = await fetch('/api/config/welcome_seen');
+    if(r.ok){ const d=await r.json(); return d.value==='1'; }
+  } catch(e){}
+  return false;
 }
 function closeWelcome() {
   document.getElementById('welcome-overlay').classList.remove('show');
@@ -540,17 +552,25 @@ async function doExtract() {
   return data;
 }
 
-async function toggleComplete(id) {
-  const data = await apiFetch(`/api/pruebas/${id}/completar`, { method:'PATCH' });
+async function toggleComplete(id, uso_comodin=false) {
+  const data = await apiFetch(`/api/pruebas/${id}/completar`, {
+    method:'PATCH',
+    body: JSON.stringify({ uso_comodin })
+  });
   const p = allPruebas.find(x=>x.id===id);
-  if (p) p.completada = data.completada;
+  if (p) { p.completada = data.completada; p.uso_comodin = data.uso_comodin; }
   return data.completada;
 }
 
 async function doUnextract(id) {
-  await apiFetch(`/api/pruebas/${id}/unextract`, { method:'POST' });
+  const data = await apiFetch(`/api/pruebas/${id}/unextract`, { method:'POST' });
   const p = allPruebas.find(x=>x.id===id);
-  if (p) { p.extraida = false; p.completada = false; }
+  if (p) { p.extraida = false; p.completada = false; p.uso_comodin = false; }
+  if (data.devolver_comodin) {
+    wildcards++;
+    updateStats();
+    toast('🃏 ¡Comodín recuperado! Ahora tienes ' + wildcards);
+  }
 }
 
 /* ══════════════════════════════════════════════════
@@ -996,7 +1016,8 @@ function renderPanel(){
       catTag.style.cssText=`background:${meta.bg};color:${meta.color};border:1px solid ${meta.color}22`;
       catTag.textContent=meta.tag;
       const emo=document.createElement('div');emo.className='thumb-emoji';emo.textContent=p.emoji||'🎯';
-      const tit=document.createElement('div');tit.className='thumb-title';tit.textContent=p.titulo;
+      const tit=document.createElement('div');tit.className='thumb-title';
+      tit.textContent=(p.uso_comodin?'🃏 ':'')+p.titulo;
       const dsc=document.createElement('div');dsc.className='thumb-desc';dsc.textContent=p.descripcion;
       body.appendChild(catTag);body.appendChild(emo);body.appendChild(tit);body.appendChild(dsc);
       body.style.cursor='pointer';
@@ -1172,10 +1193,10 @@ async function confirmRoulette(){
   } else {
     toast('😢 Nadie te ayuda esta vez… ¡a por ello solo!');
   }
-  // completar la prueba
+  // completar la prueba con comodín
   if(pendingCompletarId){
     try{
-      await toggleComplete(pendingCompletarId);
+      await toggleComplete(pendingCompletarId, true); // uso_comodin=true
       await loadPruebas();
       updateStats();renderPanel();
       if(completedCount()>=30) setTimeout(showWin,400);
@@ -1256,12 +1277,16 @@ async function init(){
     // recalcular ballsExtracted desde BD
     ballsExtracted=extractedCount();
     // recalcular comodines ganados
-    wildcards=WILDCARD_BALLS.filter(n=>n<=ballsExtracted).length;
+    // comodines ganados menos los gastados (que no se recuperaron)
+    const wildcardsGanados = WILDCARD_BALLS.filter(n=>n<=ballsExtracted).length;
+    const wildcardsGastados = allPruebas.filter(p=>p.uso_comodin).length;
+    wildcards = Math.max(0, wildcardsGanados - wildcardsGastados);
     makeBalls();settle(120);
     updateStats();renderPanel();
     document.getElementById('loading').classList.add('hidden');
     // mostrar welcome si es primera vez en esta sesión
-    if(!getWelcomeSeen()){
+    const welcomeSeen = await getWelcomeSeen();
+    if(!welcomeSeen){
       setTimeout(()=>document.getElementById('welcome-overlay').classList.add('show'),400);
     }
     initUnlockInput();
