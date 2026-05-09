@@ -541,7 +541,11 @@ async function apiFetch(path, opts={}) {
   if (!r.ok) { const e = await r.json(); throw new Error(e.error||'Error'); }
   return r.json();
 }
-async function loadPruebas() { allPruebas = await apiFetch('/api/pruebas'); }
+async function loadPruebas() {
+  const data = await apiFetch('/api/pruebas');
+  // Normalizar uso_comodin: puede venir null de la BD si la columna es nueva
+  allPruebas = data.map(p => ({ ...p, uso_comodin: !!p.uso_comodin }));
+}
 
 async function doExtract() {
   const data = await apiFetch('/api/pruebas/next');
@@ -558,7 +562,7 @@ async function toggleComplete(id, uso_comodin=false) {
     body: JSON.stringify({ uso_comodin })
   });
   const p = allPruebas.find(x=>x.id===id);
-  if (p) { p.completada = data.completada; p.uso_comodin = data.uso_comodin; }
+  if (p) { p.completada = data.completada; p.uso_comodin = !!data.uso_comodin; }
   return data.completada;
 }
 
@@ -1285,8 +1289,9 @@ async function init(){
     updateStats();renderPanel();
     document.getElementById('loading').classList.add('hidden');
     // mostrar welcome si es primera vez en esta sesión
-    const welcomeSeen = await getWelcomeSeen();
-    if(!welcomeSeen){
+    // Mostrar welcome solo si no se ha extraído ninguna prueba aún
+    // Esto es 100% fiable: si ballsExtracted==0 es que nadie ha jugado todavía
+    if(ballsExtracted === 0){
       setTimeout(()=>document.getElementById('welcome-overlay').classList.add('show'),400);
     }
     initUnlockInput();

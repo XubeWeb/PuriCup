@@ -60,12 +60,14 @@ async function initDB() {
         uso_comodin BOOLEAN NOT NULL DEFAULT false
       );
       -- Añadir columna si no existe (por si la tabla ya estaba creada)
-      ALTER TABLE pruebas ADD COLUMN IF NOT EXISTS uso_comodin BOOLEAN NOT NULL DEFAULT false;
       CREATE TABLE IF NOT EXISTS config (
         key   TEXT PRIMARY KEY,
         value TEXT NOT NULL
       );
     `);
+
+    // Asegurar columna uso_comodin siempre (por si la tabla existía sin ella)
+    await client.query('ALTER TABLE pruebas ADD COLUMN IF NOT EXISTS uso_comodin BOOLEAN NOT NULL DEFAULT false');
 
     const { rows } = await client.query('SELECT COUNT(*) as n FROM pruebas');
     if (parseInt(rows[0].n) === 0) {
