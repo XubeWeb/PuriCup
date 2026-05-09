@@ -544,7 +544,7 @@ async function apiFetch(path, opts={}) {
 async function loadPruebas() {
   const data = await apiFetch('/api/pruebas');
   // Normalizar uso_comodin: puede venir null de la BD si la columna es nueva
-  allPruebas = data.map(p => ({ ...p, uso_comodin: !!p.uso_comodin }));
+  allPruebas = data.map(p => ({ ...p, uso_comodin: !!p.uso_comodin, comodin_quien: p.comodin_quien || '' }));
 }
 
 async function doExtract() {
@@ -569,7 +569,7 @@ async function toggleComplete(id, uso_comodin=false) {
 async function doUnextract(id) {
   const data = await apiFetch(`/api/pruebas/${id}/unextract`, { method:'POST' });
   const p = allPruebas.find(x=>x.id===id);
-  if (p) { p.extraida = false; p.completada = false; p.uso_comodin = false; }
+  if (p) { p.extraida = false; p.completada = false; p.uso_comodin = false; p.comodin_quien = ''; }
   if (data.devolver_comodin) {
     wildcards++;
     updateStats();
@@ -1022,6 +1022,14 @@ function renderPanel(){
       const emo=document.createElement('div');emo.className='thumb-emoji';emo.textContent=p.emoji||'🎯';
       const tit=document.createElement('div');tit.className='thumb-title';
       tit.textContent=(p.uso_comodin?'🃏 ':'')+p.titulo;
+      if(p.uso_comodin && p.comodin_quien){
+        const quien=document.createElement('div');
+        const esNadie=p.comodin_quien.includes('Nadie');
+        quien.style.cssText='font-size:9px;margin-top:3px;letter-spacing:.5px;'+
+          'color:'+(esNadie?'rgba(255,255,255,.3)':'var(--gold)')+';font-style:italic';
+        quien.textContent=esNadie?'Sin ayuda 😢':'Ayuda: '+p.comodin_quien+' 🃏';
+        tit.appendChild(quien);
+      }
       const dsc=document.createElement('div');dsc.className='thumb-desc';dsc.textContent=p.descripcion;
       body.appendChild(catTag);body.appendChild(emo);body.appendChild(tit);body.appendChild(dsc);
       body.style.cursor='pointer';
@@ -1200,7 +1208,7 @@ async function confirmRoulette(){
   // completar la prueba con comodín
   if(pendingCompletarId){
     try{
-      await toggleComplete(pendingCompletarId, true); // uso_comodin=true
+      await toggleComplete(pendingCompletarId, true, rouletteResult||''); // uso_comodin=true + quien
       await loadPruebas();
       updateStats();renderPanel();
       if(completedCount()>=30) setTimeout(showWin,400);

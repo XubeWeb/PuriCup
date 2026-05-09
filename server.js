@@ -68,6 +68,7 @@ async function initDB() {
 
     // Asegurar columna uso_comodin siempre (por si la tabla existía sin ella)
     await client.query('ALTER TABLE pruebas ADD COLUMN IF NOT EXISTS uso_comodin BOOLEAN NOT NULL DEFAULT false');
+    await client.query("ALTER TABLE pruebas ADD COLUMN IF NOT EXISTS comodin_quien TEXT NOT NULL DEFAULT ''");
 
     const { rows } = await client.query('SELECT COUNT(*) as n FROM pruebas');
     if (parseInt(rows[0].n) === 0) {
@@ -129,7 +130,7 @@ app.post('/api/pruebas/:id/unextract', async (req, res) => {
     const id = parseInt(req.params.id);
     const { rows } = await pool.query('SELECT uso_comodin FROM pruebas WHERE id=$1', [id]);
     const tenia_comodin = rows[0] && rows[0].uso_comodin;
-    await pool.query('UPDATE pruebas SET extraida=false, completada=false, uso_comodin=false WHERE id=$1', [id]);
+    await pool.query("UPDATE pruebas SET extraida=false, completada=false, uso_comodin=false, comodin_quien='' WHERE id=$1", [id]);
     res.json({ ok: true, devolver_comodin: tenia_comodin });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -143,11 +144,12 @@ app.patch('/api/pruebas/:id/completar', async (req, res) => {
     const nuevo = !rows[0].completada;
     // Si se está completando y se usó comodín, guardarlo; si se des-completa, limpiar
     const comodin = nuevo ? (req.body && req.body.uso_comodin ? true : false) : false;
+    const quien = comodin ? (req.body.comodin_quien || '') : '';
     await pool.query(
-      'UPDATE pruebas SET completada=$1, uso_comodin=$2 WHERE id=$3',
-      [nuevo, comodin, id]
+      'UPDATE pruebas SET completada=$1, uso_comodin=$2, comodin_quien=$3 WHERE id=$4',
+      [nuevo, comodin, quien, id]
     );
-    res.json({ ok: true, completada: nuevo, uso_comodin: comodin });
+    res.json({ ok: true, completada: nuevo, uso_comodin: comodin, comodin_quien: quien });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
