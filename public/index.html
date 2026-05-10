@@ -306,6 +306,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
   <div class="stat"><div class="stat-n done" id="s-done">0</div><div class="stat-l">Realizadas</div></div>
   <div class="stat"><div class="stat-n rem" id="s-rem">34</div><div class="stat-l">En máquina</div></div>
   <div class="stat"><div class="stat-n wild" id="s-wild">0</div><div class="stat-l">Comodines 🃏</div></div>
+  <div class="stat"><div class="stat-n" id="s-tiradas" style="color:var(--neon)">0</div><div class="stat-l">Tiradas</div></div>
 </div>
 
 <div id="game-area">
@@ -323,6 +324,18 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
     <button class="btn" id="btn-r">▶</button>
   </div>
   <p id="hint">◀ ▶ mover · BAJAR atrapar</p>
+</div>
+
+<!-- PANEL COMODINES -->
+<div id="comodin-panel" style="width:min(700px,100%);background:var(--panel);border:1px solid rgba(255,204,0,.2);border-radius:14px;overflow:hidden;z-index:1">
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(100,100,200,.12)">
+    <div style="font-family:var(--fh);font-size:20px;letter-spacing:1px;color:var(--gold);flex:1">🃏 COMODINES</div>
+    <div id="comodin-disponibles" style="font-size:10px;color:var(--txt2);letter-spacing:1px"></div>
+    <button id="usar-comodin-btn" onclick="showRoulette()" style="background:rgba(255,204,0,.12);border:1px solid rgba(255,204,0,.3);color:var(--gold);font-family:var(--fh);font-size:13px;letter-spacing:1px;padding:6px 16px;border-radius:100px;cursor:pointer;transition:all .2s">USAR COMODÍN</button>
+  </div>
+  <div id="comodin-lista" style="padding:12px 18px;min-height:40px;display:flex;flex-wrap:wrap;gap:8px">
+    <div style="font-size:12px;color:var(--txt2);font-style:italic;padding:8px 0">Sin comodines usados aún</div>
+  </div>
 </div>
 
 <div id="panel">
@@ -351,8 +364,12 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
     <div class="cards-grid" id="grid-dia2"><div class="empty-msg">Sin pruebas extraídas aún</div></div>
   </div>
 </div>
+</div>
 
-<div id="reset-wrap"><button id="reset-btn" onclick="confirmReset()">↺ Reiniciar partida</button></div>
+<div id="reset-wrap" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+  <button id="reset-btn" onclick="confirmReset()">↺ Reiniciar partida</button>
+  <button id="tiradas-btn" onclick="habilitarTiradas()" style="background:transparent;border:1px solid rgba(0,224,255,.3);color:rgba(0,224,255,.5);font-size:10px;padding:6px 16px;border-radius:100px;cursor:pointer;letter-spacing:1px;font-family:var(--fb);transition:all .2s" onmouseover="this.style.borderColor='var(--neon2)';this.style.color='var(--neon2)'" onmouseout="this.style.borderColor='rgba(0,224,255,.3)';this.style.color='rgba(0,224,255,.5)'">＋ Habilitar tiradas</button>
+</div>
 
 <!-- CARD MODAL -->
 <div id="card-overlay" role="dialog">
@@ -421,7 +438,8 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
 /* ══════════════════════════════════════════════════
    CONFIG — CAMBIA AQUÍ LO QUE NECESITES
 ══════════════════════════════════════════════════ */
-const INTERACTION_PASSWORD = 'LAPURI';
+const INTERACTION_PASSWORD = 'lapuri';
+const TIRADAS_PASSWORD   = 'elrichi';
 
 // URL de la imagen del reverso de las cartas (deja null si no tienes aún)
 // Para usarla: sube la imagen a un hosting (ej: imgur.com) y pega la URL aquí
@@ -462,7 +480,10 @@ const BALL_PALETTE = [
    STATE
 ══════════════════════════════════════════════════ */
 let allPruebas = [];
-let wildcards  = 0;          // comodines acumulados
+let wildcards       = 0;   // comodines acumulados
+let tiradasDisp    = 0;   // tiradas habilitadas por el admin
+let tiradasUsadas  = 0;   // tiradas gastadas en esta sesión
+let comodinesUsados= [];  // array de {id, nombre} comodines gastados
 let ballsExtracted = 0;      // contador total de bolas extraídas
 let milestoneShown = { continuas:false, dia1:false, all:false };
 let pendingCompletarId = null; // para comodín
@@ -839,7 +860,7 @@ function tryGrab(){
     const dx=b.x-clawX,dy=b.y-cy,d=Math.sqrt(dx*dx+dy*dy);
     if(d<b.r+20&&d<bd){bd=d;best=b;}
   }
-  if(best&&Math.random()>threshold){
+  if(best){
     grabbed=best;grabbed.grabbed=true;grabbed.vx=0;grabbed.vy=0;
   }
 }
@@ -1053,11 +1074,6 @@ function renderPanel(){
       statusBtn.innerHTML=p.completada?'✓ Completada':'○ Pendiente';
       statusBtn.onclick=async(e)=>{
         e.stopPropagation();
-        // si tiene comodines y quiere completar, ofrecer ruleta
-        if(!p.completada && wildcards>0){
-          const usar=confirm(`Tienes ${wildcards} comodín(es). ¿Quieres usar uno para pedir ayuda al completar esta prueba?`);
-          if(usar){ pendingCompletarId=p.id; showRoulette(); return; }
-        }
         await doToggleComplete(p.id,th,statusBtn);
       };
 
@@ -1125,13 +1141,41 @@ function showMilestone(key){
 }
 function closeMilestone(){ document.getElementById('milestone-overlay').classList.remove('show'); }
 
+function renderComodinesUsados(){
+  const lista=document.getElementById('comodin-lista');
+  if(!lista)return;
+  const disp=document.getElementById('comodin-disponibles');
+  if(disp) disp.textContent=wildcards+' disponible'+(wildcards===1?'':'s');
+  if(comodinesUsados.length===0){
+    lista.innerHTML='<div style="font-size:12px;color:var(--txt2);font-style:italic;padding:8px 0">Sin comodines usados aún</div>';
+    return;
+  }
+  lista.innerHTML='';
+  comodinesUsados.forEach((c,i)=>{
+    const tag=document.createElement('div');
+    const esNadie=c.nombre.includes('Nadie');
+    tag.style.cssText='display:flex;align-items:center;gap:6px;background:rgba(255,204,0,.1);border:1px solid rgba(255,204,0,.25);border-radius:100px;padding:4px 10px 4px 12px;font-size:12px;';
+    tag.innerHTML='<span style="color:var(--gold)">🃏</span>'
+      +'<span style="color:'+(esNadie?'rgba(255,255,255,.35)':'var(--txt)')+'">'+c.nombre+'</span>'
+      +'<button onclick="borrarComodinUsado('+i+')" style="background:rgba(255,50,50,.15);border:none;color:#ff7070;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>';
+    lista.appendChild(tag);
+  });
+}
+
+function borrarComodinUsado(i){
+  if(!confirm('¿Eliminar este comodín del registro? Se recuperará 1 comodín disponible.'))return;
+  comodinesUsados.splice(i,1);
+  wildcards++;
+  updateStats();
+}
+
 /* ══════════════════════════════════════════════════
    WIN / CONFETTI
 ══════════════════════════════════════════════════ */
 function showWin(){
   document.getElementById('win-overlay').classList.add('show');
   startConfetti();
-  setTimeout(stopConfetti, 8000);
+  setTimeout(stopConfetti, 60000);
 }
 function closeWin(){
   document.getElementById('win-overlay').classList.remove('show');
@@ -1199,9 +1243,11 @@ function spinRoulette(){
 async function confirmRoulette(){
   closeRoulette();
   wildcards=Math.max(0,wildcards-1);
+  const nombre=rouletteResult||'?';
+  comodinesUsados.push({nombre});
   updateStats();
-  if(rouletteResult && rouletteResult!=='Nadie 😢'){
-    toast(`🃏 ${rouletteResult} te ayudará con esta prueba!`);
+  if(nombre&&!nombre.includes('Nadie')){
+    toast('🃏 '+nombre+' te ayudará — ¡a por ello!');
   } else {
     toast('😢 Nadie te ayuda esta vez… ¡a por ello solo!');
   }
@@ -1226,6 +1272,9 @@ function startDrop(){
   if(document.body.classList.contains('locked')){showUnlock();return;}
   if(animating)return;
   if(remainingCount()===0){toast('¡Todas las pruebas han salido!');return;}
+  if(tiradasDisp-tiradasUsadas<=0){toast('Sin tiradas disponibles — pide al admin que habilite más 🔒');return;}
+  tiradasUsadas++;
+  updateStats();
   animating=true;grabbed=null;wireLen=0;phase='dropping';
 }
 
@@ -1256,6 +1305,11 @@ function updateStats(){
   document.getElementById('s-done').textContent=completedCount();
   document.getElementById('s-rem').textContent=remainingCount();
   document.getElementById('s-wild').textContent=wildcards;
+  document.getElementById('s-tiradas').textContent=Math.max(0,tiradasDisp-tiradasUsadas);
+  // botón usar comodín: desactivar si no hay
+  const btn=document.getElementById('usar-comodin-btn');
+  if(btn){ btn.disabled=wildcards<=0; btn.style.opacity=wildcards>0?'1':'.35'; btn.style.cursor=wildcards>0?'pointer':'not-allowed'; }
+  renderComodinesUsados();
 }
 
 let toastT;
@@ -1263,6 +1317,17 @@ function toast(msg){
   const el=document.getElementById('toast');el.textContent=msg;
   el.classList.add('show');clearTimeout(toastT);
   toastT=setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+function habilitarTiradas(){
+  if(document.body.classList.contains('locked')){showUnlock();return;}
+  const clave=prompt('Contraseña admin:');
+  if(clave!==TIRADAS_PASSWORD){toast('Contraseña incorrecta');return;}
+  const n=parseInt(prompt('¿Cuántas tiradas quieres añadir?'));
+  if(!n||n<1||isNaN(n)){toast('Número inválido');return;}
+  tiradasDisp+=n;
+  updateStats();
+  toast('✅ '+n+' tirada'+(n>1?'s':'')+' habilitada'+(n>1?'s':'')+'. Total disponibles: '+(tiradasDisp-tiradasUsadas));
 }
 
 async function confirmReset(){
@@ -1274,7 +1339,8 @@ async function confirmReset(){
     await loadPruebas();
     clearChute();
     balls=[];grabbed=null;wireLen=0;phase='idle';animating=false;
-    ballsExtracted=0;wildcards=0;milestoneShown={continuas:false,dia1:false,all:false};
+    ballsExtracted=0;wildcards=0;tiradasDisp=0;tiradasUsadas=0;comodinesUsados=[];
+    milestoneShown={continuas:false,dia1:false,all:false};
     makeBalls();settle(120);updateStats();renderPanel();
     toast('Partida reiniciada ✓');
   }catch(e){toast('Clave incorrecta o error.');}
@@ -1302,6 +1368,11 @@ async function init(){
     if(ballsExtracted === 0){
       setTimeout(()=>document.getElementById('welcome-overlay').classList.add('show'),400);
     }
+    // Tiradas: arrancan en 0, admin las habilita manualmente
+    tiradasDisp  = 0;
+    tiradasUsadas= 0;
+    comodinesUsados = [];
+    updateStats();
     initUnlockInput();
     requestAnimationFrame(gameLoop);
   }catch(e){
