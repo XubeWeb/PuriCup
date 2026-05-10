@@ -47,11 +47,11 @@ header h1{font-family:var(--fh);font-size:clamp(32px,9vw,62px);letter-spacing:5p
 
 #stats{display:flex;gap:0;background:var(--panel);border:1px solid var(--border);
   border-radius:14px;overflow:hidden;z-index:1}
-.stat{text-align:center;padding:10px 18px;border-right:1px solid var(--border)}
+.stat{text-align:center;padding:8px 10px;border-right:1px solid var(--border)}
 .stat:last-child{border-right:none}
-.stat-n{font-family:var(--fh);font-size:26px;line-height:1;letter-spacing:1px}
+.stat-n{font-family:var(--fh);font-size:22px;line-height:1;letter-spacing:.5px}
 .stat-n.active{color:var(--neon2)}.stat-n.done{color:var(--green)}.stat-n.rem{color:var(--txt3)}
-.stat-l{font-size:9px;letter-spacing:1.5px;color:var(--txt2);text-transform:uppercase;margin-top:2px}
+.stat-l{font-size:8px;letter-spacing:.5px;color:var(--txt2);text-transform:uppercase;margin-top:1px}
 /* comodines stat */
 .stat-n.wild{color:var(--gold)}
 
@@ -337,10 +337,10 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
 </header>
 
 <div id="stats">
-  <div class="stat"><div class="stat-n active" id="s-active">0</div><div class="stat-l">Pruebas activas</div></div>
-  <div class="stat"><div class="stat-n done" id="s-done">0</div><div class="stat-l">Realizadas</div></div>
-  <div class="stat"><div class="stat-n rem" id="s-rem">34</div><div class="stat-l">En máquina</div></div>
-  <div class="stat"><div class="stat-n wild" id="s-wild">0</div><div class="stat-l">Comodines 🃏</div></div>
+  <div class="stat"><div class="stat-n active" id="s-active">0</div><div class="stat-l">Activas</div></div>
+  <div class="stat"><div class="stat-n done" id="s-done">0</div><div class="stat-l">Hechas</div></div>
+  <div class="stat"><div class="stat-n rem" id="s-rem">34</div><div class="stat-l">Máquina</div></div>
+  <div class="stat"><div class="stat-n wild" id="s-wild">0</div><div class="stat-l">🃏</div></div>
   <div class="stat"><div class="stat-n" id="s-tiradas" style="color:var(--neon)">0</div><div class="stat-l">Tiradas</div></div>
 </div>
 
@@ -397,6 +397,14 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
       <div class="cat-stats" id="stats-dia2">—</div>
     </div>
     <div class="cards-grid" id="grid-dia2"><div class="empty-msg">Sin pruebas extraídas aún</div></div>
+  </div>
+  <div class="cat-block" id="cat-sorpresa-block" style="display:none">
+    <div class="cat-header">
+      <div class="cat-pill" style="background:rgba(170,68,255,.12);color:#aa44ff;border:1px solid rgba(170,68,255,.25)">SORPRESA</div>
+      <div class="cat-name" style="color:#aa44ff">Sorpresas</div>
+      <div class="cat-stats" id="stats-sorpresa">—</div>
+    </div>
+    <div class="cards-grid" id="grid-sorpresa"><div class="empty-msg">Sin sorpresas activadas aún</div></div>
   </div>
 </div>
 </div>
@@ -467,7 +475,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
 </div>
 
 <!-- ADMIN PANEL -->
-<div id="admin-overlay" style="display:none">
+<div id="admin-overlay" style="display:none" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
   <div id="admin-box">
     <h2>🕵️ PANEL ADMIN <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,.08);border:none;color:var(--txt2);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px">✕</button></h2>
 
@@ -476,8 +484,9 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
       <h3>🎯 TIRADAS DE MÁQUINA</h3>
       <div style="font-size:13px;color:var(--txt3)">Disponibles: <strong id="admin-tiradas-disp" style="color:var(--neon2)">0</strong> · Usadas: <strong id="admin-tiradas-used" style="color:var(--txt2)">0</strong></div>
       <div class="admin-input-row">
-        <input id="admin-tiradas-n" type="number" min="1" max="50" placeholder="Nº tiradas a añadir" value="5">
+        <input id="admin-tiradas-n" type="number" min="1" max="50" placeholder="Nº tiradas" value="5">
         <button class="admin-btn primary" onclick="adminAnadirTiradas()" style="width:auto;white-space:nowrap">＋ Añadir</button>
+        <button class="admin-btn danger" onclick="adminQuitarTiradas()" style="width:auto;white-space:nowrap">－ Quitar</button>
       </div>
     </div>
 
@@ -489,35 +498,53 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
       <button class="admin-btn primary" id="btn-guardar-orden" onclick="adminGuardarOrden()" style="display:none;margin-top:4px">💾 Guardar nuevo orden</button>
     </div>
 
-    <!-- Próximo comodín -->
+    <!-- Comodines -->
     <div class="admin-section">
-      <h3>🃏 PRÓXIMO COMODÍN</h3>
-      <div style="font-size:12px;color:var(--txt2);margin-bottom:4px">Fuerza quién saldrá en la próxima ruleta de comodín</div>
+      <h3>🃏 COMODINES</h3>
+      <div style="font-size:12px;color:var(--txt3)">Disponibles: <strong id="admin-wild-n" style="color:var(--gold)">0</strong></div>
+      <div style="display:flex;gap:6px">
+        <button class="admin-btn gold" onclick="adminAnadirComodin()" style="flex:1">＋ Añadir comodín</button>
+        <button class="admin-btn danger" onclick="adminQuitarComodin()" style="flex:1">－ Quitar comodín</button>
+      </div>
+      <hr style="border:none;border-top:1px solid rgba(100,100,200,.1);margin:4px 0">
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:2px">Forzar quién sale en la próxima ruleta:</div>
       <select id="admin-comodin-select" class="admin-select">
-        <option value="">— Aleatorio (normal) —</option>
+        <option value="">— Aleatorio —</option>
       </select>
-      <div id="admin-comodin-forzado" style="font-size:12px;color:var(--gold);margin-top:4px;display:none"></div>
-      <button class="admin-btn gold" onclick="adminForzarComodin()">Forzar este comodín</button>
-      <button class="admin-btn" onclick="adminQuitarForzado()" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--txt2);font-size:11px">Quitar forzado</button>
+      <div id="admin-comodin-forzado" style="font-size:11px;color:var(--gold);display:none"></div>
+      <div style="display:flex;gap:6px">
+        <button class="admin-btn gold" onclick="adminForzarComodin()" style="flex:1">Forzar</button>
+        <button class="admin-btn" onclick="adminQuitarForzado()" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--txt2);font-size:11px">Quitar forzado</button>
+      </div>
     </div>
 
     <!-- Añadir prueba -->
     <div class="admin-section">
-      <h3>➕ AÑADIR PRUEBA</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <input id="new-emoji" type="text" placeholder="Emoji 🎯" maxlength="4"
-          style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:14px;font-family:var(--fb);text-align:center">
-        <select id="new-cat" style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fb)">
+      <h3>➕ AÑADIR / BORRAR PRUEBA</h3>
+      <div style="display:grid;grid-template-columns:48px 1fr 1fr;gap:6px;align-items:center">
+        <input id="new-emoji" type="text" placeholder="🎯" maxlength="4"
+          style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 6px;font-size:16px;font-family:var(--fb);text-align:center;width:100%">
+        <select id="new-cat" class="admin-select">
           <option value="continuas">🔁 Continua</option>
           <option value="dia1">☀️ Día 1</option>
           <option value="dia2">🌙 Día 2</option>
+          <option value="sorpresa">✨ Sorpresa</option>
+        </select>
+        <select id="new-pos" class="admin-select">
+          <option value="0">📍 Al final</option>
         </select>
       </div>
       <input id="new-titulo" type="text" placeholder="Título de la prueba" maxlength="60"
         style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fb);width:100%">
-      <textarea id="new-desc" placeholder="Descripción detallada de la prueba…" rows="3"
+      <textarea id="new-desc" placeholder="Descripción detallada…" rows="2"
         style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:11px;font-family:var(--fb);width:100%;resize:vertical"></textarea>
       <button class="admin-btn primary" onclick="adminAnadirPrueba()">➕ Añadir prueba</button>
+      <hr style="border:none;border-top:1px solid rgba(100,100,200,.1);margin:4px 0">
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:4px">Borrar una prueba existente:</div>
+      <div style="display:flex;gap:6px">
+        <select id="del-prueba-sel" class="admin-select" style="flex:1"></select>
+        <button class="admin-btn danger" onclick="adminBorrarPrueba()" style="width:auto;white-space:nowrap;flex-shrink:0">🗑 Borrar</button>
+      </div>
     </div>
 
     <!-- Reiniciar -->
@@ -562,6 +589,7 @@ const CAT = {
   continuas:{ label:'Continuas',  color:'#ff1f6e', tag:'CONTINUA', bg:'rgba(255,31,110,.12)',  cardGrad:'linear-gradient(145deg,#1a0015,#4a0030)' },
   dia1:     { label:'Primer día', color:'#00e0ff', tag:'DÍA 1',    bg:'rgba(0,224,255,.1)',    cardGrad:'linear-gradient(145deg,#001830,#003a5a)' },
   dia2:     { label:'Segundo día',color:'#ffcc00', tag:'DÍA 2',    bg:'rgba(255,204,0,.1)',    cardGrad:'linear-gradient(145deg,#1a1400,#3a3000)' },
+  sorpresa: { label:'Sorpresa',   color:'#aa44ff', tag:'SORPRESA', bg:'rgba(170,68,255,.12)',  cardGrad:'linear-gradient(145deg,#0e0020,#2a0060)' },
 };
 
 const BALL_PALETTE = [
@@ -720,12 +748,12 @@ let phase='idle',animating=false;
 let particles=[],keys={};
 
 function remainingCount(){ return allPruebas.filter(p=>!p.extraida).length; }
-function extractedCount(){ return allPruebas.filter(p=>p.extraida).length; }
-function completedCount(){ return allPruebas.filter(p=>p.completada).length; }
+function extractedCount(){ return allPruebas.filter(p=>p.extraida&&p.categoria!=='sorpresa').length; }
+function completedCount(){ return allPruebas.filter(p=>p.completada&&p.categoria!=='sorpresa').length; }
 
 // Orden: continuas primero, luego dia1, luego dia2
 function getOrderedRemaining(){
-  const order = {continuas:0, dia1:1, dia2:2};
+  const order = {continuas:0, dia1:1, dia2:2, sorpresa:3};
   return allPruebas
     .filter(p=>!p.extraida)
     .sort((a,b)=> order[a.categoria]-order[b.categoria] || a.orden-b.orden);
@@ -1129,7 +1157,10 @@ document.getElementById('card-close').addEventListener('click',()=>{
    PANEL
 ══════════════════════════════════════════════════ */
 function renderPanel(){
-  ['continuas','dia1','dia2'].forEach(cat=>{
+  // Mostrar bloque sorpresa solo si hay alguna extraída
+  const sorpresaBlock=document.getElementById('cat-sorpresa-block');
+  if(sorpresaBlock) sorpresaBlock.style.display=allPruebas.some(p=>p.categoria==='sorpresa'&&p.extraida)?'block':'none';
+  ['continuas','dia1','dia2','sorpresa'].forEach(cat=>{
     const extracted=allPruebas.filter(p=>p.categoria===cat&&p.extraida);
     const done=extracted.filter(p=>p.completada).length;
     document.getElementById('stats-'+cat).textContent=
@@ -1476,6 +1507,36 @@ function renderAdminPanel(){
   // Render drag list
   renderDragList();
 
+  // Select borrar prueba
+  const delSel=document.getElementById('del-prueba-sel');
+  if(delSel){
+    delSel.innerHTML='';
+    allPruebas.slice().sort((a,b)=>a.orden-b.orden).forEach(p=>{
+      const o=document.createElement('option');
+      o.value=p.id;
+      const extraida=p.extraida?'[✓] ':'';
+      o.textContent=extraida+'#'+p.orden+' '+p.emoji+' '+p.titulo;
+      delSel.appendChild(o);
+    });
+  }
+
+  // Select posición nueva prueba
+  const posSel=document.getElementById('new-pos');
+  if(posSel){
+    posSel.innerHTML='<option value="0">📍 Al final</option>';
+    const remaining=allPruebas.filter(p=>!p.extraida).sort((a,b)=>a.orden-b.orden);
+    remaining.forEach((p,i)=>{
+      const o=document.createElement('option');
+      o.value=p.id; // insertar ANTES de esta prueba
+      o.textContent='Antes de: '+p.emoji+' '+p.titulo;
+      posSel.appendChild(o);
+    });
+  }
+
+  // Comodines disponibles
+  const wildN=document.getElementById('admin-wild-n');
+  if(wildN) wildN.textContent=wildcards;
+
   // Select comodín forzado
   const selC=document.getElementById('admin-comodin-select');
   selC.innerHTML='<option value="">— Aleatorio (normal) —</option>';
@@ -1550,10 +1611,10 @@ function buildDragDOM(list){
     if(!p.extraida){
       const catSel=document.createElement('select');
       catSel.style.cssText='background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:2px 4px;font-size:9px;font-family:var(--fb);margin-top:3px;width:100%';
-      ['continuas','dia1','dia2'].forEach(c=>{
+      ['continuas','dia1','dia2','sorpresa'].forEach(c=>{
         const o=document.createElement('option');
         o.value=c;
-        o.textContent={continuas:'🔁 Continua',dia1:'☀️ Día 1',dia2:'🌙 Día 2'}[c];
+        o.textContent={continuas:'🔁 Continua',dia1:'☀️ Día 1',dia2:'🌙 Día 2',sorpresa:'✨ Sorpresa'}[c];
         if(p.categoria===c) o.selected=true;
         catSel.appendChild(o);
       });
@@ -1564,21 +1625,18 @@ function buildDragDOM(list){
       info.appendChild(catSel);
     }
 
-    // Botones ▲▼ (siempre visibles, funcionan en móvil y desktop)
+    // Botones ▲▼ al lado
     const btns=document.createElement('div');
-    btns.style.cssText='display:flex;flex-direction:column;gap:2px;flex-shrink:0';
+    btns.className='drag-btns';
     if(!p.extraida){
       const up=document.createElement('button');
       up.textContent='▲'; up.title='Subir';
-      up.style.cssText='background:rgba(0,224,255,.1);border:1px solid rgba(0,224,255,.2);color:var(--neon2);border-radius:4px;width:24px;height:22px;cursor:pointer;font-size:10px;line-height:1;padding:0';
       up.onclick=(e)=>{e.stopPropagation();moveItem(i,-1);};
+      if(i===0||allPrevExtracted(i)) up.style.opacity='0.2';
 
       const dn=document.createElement('button');
       dn.textContent='▼'; dn.title='Bajar';
-      dn.style.cssText='background:rgba(0,224,255,.1);border:1px solid rgba(0,224,255,.2);color:var(--neon2);border-radius:4px;width:24px;height:22px;cursor:pointer;font-size:10px;line-height:1;padding:0';
       dn.onclick=(e)=>{e.stopPropagation();moveItem(i,+1);};
-
-      if(i===0||allPrevExtracted(i)) up.style.opacity='0.2';
       if(i===dragOrder.length-1||allNextExtracted(i)) dn.style.opacity='0.2';
 
       btns.appendChild(up);
@@ -1674,12 +1732,13 @@ async function adminAnadirPrueba(){
   const cat=document.getElementById('new-cat').value;
   const titulo=document.getElementById('new-titulo').value.trim();
   const desc=document.getElementById('new-desc').value.trim();
+  const posVal=document.getElementById('new-pos')?.value||'0';
   if(!titulo){toast('Escribe un título');return;}
   if(!desc){toast('Escribe una descripción');return;}
   try{
     const res=await fetch('/api/pruebas',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({categoria:cat,titulo,descripcion:desc,emoji})
+      body:JSON.stringify({categoria:cat,titulo,descripcion:desc,emoji,insertarAntesDe:posVal==='0'?null:parseInt(posVal)})
     });
     if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
     document.getElementById('new-emoji').value='';
@@ -1688,7 +1747,8 @@ async function adminAnadirPrueba(){
     await loadPruebas();
     makeBalls();settle(60);
     updateStats();renderPanel();renderDragList();
-    toast('✅ Prueba añadida a la máquina');
+    renderAdminPanel();
+    toast('✅ Prueba añadida');
   }catch(e){toast('Error: '+e.message);}
 }
 
@@ -1709,6 +1769,46 @@ async function adminGuardarOrden(){
     makeBalls();settle(60);
     renderDragList();
     toast('✅ Orden guardado');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+function adminQuitarTiradas(){
+  const n=parseInt(document.getElementById('admin-tiradas-n').value)||1;
+  const avail=tiradasDisp-tiradasUsadas;
+  const quitar=Math.min(n,avail);
+  if(quitar<=0){toast('No hay tiradas disponibles para quitar');return;}
+  tiradasDisp-=quitar;
+  updateStats();renderAdminPanel();
+  toast('－'+quitar+' tirada'+(quitar>1?'s':'')+' quitada'+(quitar>1?'s':''));
+}
+
+function adminAnadirComodin(){
+  wildcards++;
+  updateStats();renderAdminPanel();
+  toast('🃏 Comodín añadido — total: '+wildcards);
+}
+
+function adminQuitarComodin(){
+  if(wildcards<=0){toast('No hay comodines para quitar');return;}
+  wildcards--;
+  updateStats();renderAdminPanel();
+  toast('🃏 Comodín quitado — total: '+wildcards);
+}
+
+async function adminBorrarPrueba(){
+  const sel=document.getElementById('del-prueba-sel');
+  if(!sel||!sel.value){toast('Selecciona una prueba');return;}
+  const id=parseInt(sel.value);
+  const p=allPruebas.find(x=>x.id===id);
+  if(!p){toast('No encontrada');return;}
+  if(!confirm('¿Borrar "'+p.titulo+'"? Esto es permanente.'))return;
+  try{
+    const res=await fetch('/api/pruebas/'+id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave:'lapuri'})});
+    if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
+    await loadPruebas();
+    makeBalls();settle(60);
+    updateStats();renderPanel();renderAdminPanel();
+    toast('🗑 Prueba borrada');
   }catch(e){toast('Error: '+e.message);}
 }
 

@@ -195,12 +195,26 @@ app.post('/api/config', async (req, res) => {
 // POST /api/pruebas — añadir nueva prueba
 app.post('/api/pruebas', async (req, res) => {
   try {
-    const { categoria, titulo, descripcion, emoji } = req.body;
+    const { categoria, titulo, descripcion, emoji, insertarAntesDe } = req.body;
     if (!categoria || !titulo || !descripcion) return res.status(400).json({ error: 'Faltan campos' });
-    // Calcular nuevo id y orden (máximo actual + 1)
-    const { rows: maxRows } = await pool.query('SELECT MAX(id) as maxid, MAX(orden) as maxorden FROM pruebas');
-    const newId    = (maxRows[0].maxid    || 0) + 1;
-    const newOrden = (maxRows[0].maxorden || 0) + 1;
+    const { rows: maxRows } = await pool.query('SELECT MAX(id) as maxid FROM pruebas');
+    const newId = (maxRows[0].maxid || 0) + 1;
+    let newOrden;
+    if (insertarAntesDe) {
+      // Obtener orden de la prueba destino, hacer hueco
+      const { rows: destRows } = await pool.query('SELECT orden FROM pruebas WHERE id=$1', [insertarAntesDe]);
+      if (destRows[0]) {
+        newOrden = destRows[0].orden;
+        // Desplazar las pruebas desde esa posición
+        await pool.query('UPDATE pruebas SET orden = orden + 1 WHERE orden >= $1 AND extraida = false', [newOrden]);
+      } else {
+        const { rows: maxO } = await pool.query('SELECT MAX(orden) as maxorden FROM pruebas');
+        newOrden = (maxO[0].maxorden || 0) + 1;
+      }
+    } else {
+      const { rows: maxO } = await pool.query('SELECT MAX(orden) as maxorden FROM pruebas');
+      newOrden = (maxO[0].maxorden || 0) + 1;
+    }
     await pool.query(
       'INSERT INTO pruebas (id,orden,categoria,titulo,descripcion,emoji) VALUES ($1,$2,$3,$4,$5,$6)',
       [newId, newOrden, categoria, titulo, descripcion, emoji || '🎯']
@@ -215,8 +229,19 @@ app.patch('/api/pruebas/:id/categoria', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { categoria } = req.body;
-    if (!['continuas','dia1','dia2'].includes(categoria)) return res.status(400).json({ error: 'Categoría inválida' });
+    if (!['continuas','dia1','dia2','sorpresa'].includes(categoria)) return res.status(400).json({ error: 'Categoría inválida' });
     await pool.query('UPDATE pruebas SET categoria=$1 WHERE id=$2', [categoria, id]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/pruebas/:id — borrar prueba
+app.delete('/api/pruebas/:id', async (req, res) => {
+  try {
+    const { clave } = req.body;
+    if (clave !== (process.env.RESET_KEY || 'lapuri')) return res.status(403).json({ error: 'Sin permiso' });
+    const id = parseInt(req.params.id);
+    await pool.query('DELETE FROM pruebas WHERE id=$1', [id]);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
