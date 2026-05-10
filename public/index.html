@@ -366,9 +366,8 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
 </div>
 </div>
 
-<div id="reset-wrap" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
-  <button id="reset-btn" onclick="confirmReset()">↺ Reiniciar partida</button>
-  <button id="tiradas-btn" onclick="habilitarTiradas()" style="background:transparent;border:1px solid rgba(0,224,255,.3);color:rgba(0,224,255,.5);font-size:10px;padding:6px 16px;border-radius:100px;cursor:pointer;letter-spacing:1px;font-family:var(--fb);transition:all .2s" onmouseover="this.style.borderColor='var(--neon2)';this.style.color='var(--neon2)'" onmouseout="this.style.borderColor='rgba(0,224,255,.3)';this.style.color='rgba(0,224,255,.5)'">＋ Habilitar tiradas</button>
+<div id="reset-wrap">
+  <button id="admin-open-btn" onclick="showAdminPanel()" style="background:rgba(20,20,50,.9);border:1.5px solid rgba(100,100,200,.3);color:var(--txt2);font-size:18px;width:52px;height:52px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s" title="Panel admin">🕵️</button>
 </div>
 
 <!-- CARD MODAL -->
@@ -432,6 +431,57 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
   <button id="unlock-btn" onclick="showUnlock()">🔒 Desbloquear interacción</button>
 </div>
 
+<!-- ADMIN PANEL -->
+<div id="admin-overlay">
+  <div id="admin-box">
+    <h2>🕵️ PANEL ADMIN <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,.08);border:none;color:var(--txt2);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px">✕</button></h2>
+
+    <!-- Tiradas -->
+    <div class="admin-section">
+      <h3>🎯 TIRADAS DE MÁQUINA</h3>
+      <div style="font-size:13px;color:var(--txt3)">Disponibles: <strong id="admin-tiradas-disp" style="color:var(--neon2)">0</strong> · Usadas: <strong id="admin-tiradas-used" style="color:var(--txt2)">0</strong></div>
+      <div class="admin-input-row">
+        <input id="admin-tiradas-n" type="number" min="1" max="50" placeholder="Nº tiradas a añadir" value="5">
+        <button class="admin-btn primary" onclick="adminAnadirTiradas()" style="width:auto;white-space:nowrap">＋ Añadir</button>
+      </div>
+    </div>
+
+    <!-- Próxima prueba -->
+    <div class="admin-section">
+      <h3>⏭️ PRÓXIMA PRUEBA</h3>
+      <div id="admin-next-prueba" style="font-size:13px;color:var(--txt3)">Calculando…</div>
+      <select id="admin-override-select" class="admin-select">
+        <option value="">— Forzar próxima prueba —</option>
+      </select>
+      <button class="admin-btn gold" onclick="adminForzarPrueba()">Forzar esta prueba como próxima</button>
+    </div>
+
+    <!-- Próximo comodín -->
+    <div class="admin-section">
+      <h3>🃏 PRÓXIMO COMODÍN</h3>
+      <div style="font-size:12px;color:var(--txt2);margin-bottom:4px">Fuerza quién saldrá en la próxima ruleta de comodín</div>
+      <select id="admin-comodin-select" class="admin-select">
+        <option value="">— Aleatorio (normal) —</option>
+      </select>
+      <div id="admin-comodin-forzado" style="font-size:12px;color:var(--gold);margin-top:4px;display:none"></div>
+      <button class="admin-btn gold" onclick="adminForzarComodin()">Forzar este comodín</button>
+      <button class="admin-btn" onclick="adminQuitarForzado()" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--txt2);font-size:11px">Quitar forzado</button>
+    </div>
+
+    <!-- Chuleta -->
+    <div class="admin-section">
+      <h3>📋 CHULETA DE PRUEBAS</h3>
+      <div id="admin-chuleta" class="chuleta-list"></div>
+    </div>
+
+    <!-- Reiniciar -->
+    <div class="admin-section">
+      <h3>⚠️ ZONA DE PELIGRO</h3>
+      <button class="admin-btn danger" onclick="adminReset()">↺ Reiniciar partida completa</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -484,6 +534,9 @@ let wildcards       = 0;   // comodines acumulados
 let tiradasDisp    = 0;   // tiradas habilitadas por el admin
 let tiradasUsadas  = 0;   // tiradas gastadas en esta sesión
 let comodinesUsados= [];  // array de {id, nombre} comodines gastados
+let adminUnlocked  = false; // panel admin desbloqueado
+let forzarComodin  = null;  // nombre forzado para próxima ruleta
+let forzarPruebaId = null;  // id de prueba forzada como próxima
 let ballsExtracted = 0;      // contador total de bolas extraídas
 let milestoneShown = { continuas:false, dia1:false, all:false };
 let pendingCompletarId = null; // para comodín
@@ -569,6 +622,15 @@ async function loadPruebas() {
 }
 
 async function doExtract() {
+  let targetId = forzarPruebaId;
+  forzarPruebaId = null; // limpiar tras usar
+  if(targetId){
+    // extraer la prueba forzada
+    await apiFetch(`/api/pruebas/${targetId}/extraer`, { method:'POST' });
+    const p = allPruebas.find(x=>x.id===targetId);
+    if (p) p.extraida = true;
+    return p || null;
+  }
   const data = await apiFetch('/api/pruebas/next');
   if (data.done) return null;
   await apiFetch(`/api/pruebas/${data.id}/extraer`, { method:'POST' });
@@ -825,6 +887,8 @@ function gameLoop(){
       const pruebaId=grabbed.pruebaId;
       balls=balls.filter(b=>b!==grabbed);
       grabbed=null;
+      tiradasUsadas++; // solo resta si cogió bola
+      updateStats();
       doExtractAndAdd(col, pruebaId);
     }
     clawTX=210;phase='idle';animating=false;
@@ -1220,6 +1284,21 @@ let rouletteInterval;
 function spinRoulette(){
   document.getElementById('roulette-spin').disabled=true;
   const names=ASISTENTES;
+
+  // Si hay comodín forzado por admin, usarlo directamente
+  if(forzarComodin){
+    const forced=forzarComodin;
+    forzarComodin=null;
+    rouletteResult=forced;
+    const disp=document.getElementById('roulette-display');
+    disp.textContent=forced;
+    disp.style.color=forced.includes('Nadie')?'rgba(255,255,255,.25)':'#fff';
+    document.getElementById('roulette-spin').disabled=false;
+    document.getElementById('roulette-spin').textContent='✓ Confirmar: '+forced;
+    document.getElementById('roulette-spin').onclick=confirmRoulette;
+    return;
+  }
+
   let i=0,spins=0,maxSpins=30+Math.floor(Math.random()*20);
   clearInterval(rouletteInterval);
   rouletteInterval=setInterval(()=>{
@@ -1273,8 +1352,6 @@ function startDrop(){
   if(animating)return;
   if(remainingCount()===0){toast('¡Todas las pruebas han salido!');return;}
   if(tiradasDisp-tiradasUsadas<=0){toast('Sin tiradas disponibles — pide al admin que habilite más 🔒');return;}
-  tiradasUsadas++;
-  updateStats();
   animating=true;grabbed=null;wireLen=0;phase='dropping';
 }
 
@@ -1319,16 +1396,132 @@ function toast(msg){
   toastT=setTimeout(()=>el.classList.remove('show'),3200);
 }
 
-function habilitarTiradas(){
+/* ══════════════════════════════════════════════════
+   ADMIN PANEL
+══════════════════════════════════════════════════ */
+function showAdminPanel(){
   if(document.body.classList.contains('locked')){showUnlock();return;}
-  const clave=prompt('Contraseña admin:');
-  if(clave!==TIRADAS_PASSWORD){toast('Contraseña incorrecta');return;}
-  const n=parseInt(prompt('¿Cuántas tiradas quieres añadir?'));
+  if(!adminUnlocked){
+    const clave=prompt('Contraseña admin:');
+    if(clave!==TIRADAS_PASSWORD){toast('Contraseña incorrecta');return;}
+    adminUnlocked=true;
+  }
+  renderAdminPanel();
+  document.getElementById('admin-overlay').classList.add('show');
+}
+
+function closeAdminPanel(){
+  document.getElementById('admin-overlay').classList.remove('show');
+}
+
+function renderAdminPanel(){
+  // Tiradas
+  document.getElementById('admin-tiradas-disp').textContent=Math.max(0,tiradasDisp-tiradasUsadas);
+  document.getElementById('admin-tiradas-used').textContent=tiradasUsadas;
+
+  // Próxima prueba
+  const ordered=getOrderedRemaining();
+  let nextLabel='Sin pruebas restantes';
+  if(forzarPruebaId){
+    const fp=allPruebas.find(p=>p.id===forzarPruebaId);
+    nextLabel=fp?'🔒 FORZADA: #'+fp.orden+' '+fp.titulo:'Prueba no encontrada';
+  } else if(ordered.length>0){
+    const n=ordered[0];
+    nextLabel='#'+n.orden+' ['+CAT[n.categoria].tag+'] '+n.titulo;
+  }
+  document.getElementById('admin-next-prueba').textContent=nextLabel;
+
+  // Select forzar próxima prueba
+  const sel=document.getElementById('admin-override-select');
+  sel.innerHTML='<option value="">— Forzar próxima prueba —</option>';
+  getOrderedRemaining().forEach(p=>{
+    const opt=document.createElement('option');
+    opt.value=p.id;
+    opt.textContent='#'+p.orden+' ['+CAT[p.categoria].tag+'] '+p.titulo;
+    if(forzarPruebaId===p.id) opt.selected=true;
+    sel.appendChild(opt);
+  });
+
+  // Select comodín forzado
+  const selC=document.getElementById('admin-comodin-select');
+  selC.innerHTML='<option value="">— Aleatorio (normal) —</option>';
+  ASISTENTES.forEach(a=>{
+    const opt=document.createElement('option');
+    opt.value=a; opt.textContent=a;
+    if(forzarComodin===a) opt.selected=true;
+    selC.appendChild(opt);
+  });
+  const forzInfo=document.getElementById('admin-comodin-forzado');
+  if(forzarComodin){forzInfo.textContent='Forzado: '+forzarComodin;forzInfo.style.display='block';}
+  else{forzInfo.style.display='none';}
+
+  // Chuleta
+  const chuleta=document.getElementById('admin-chuleta');
+  chuleta.innerHTML='';
+  allPruebas.slice().sort((a,b)=>a.orden-b.orden).forEach(p=>{
+    const meta=CAT[p.categoria];
+    const div=document.createElement('div');
+    div.className='chuleta-item';
+    div.style.opacity=p.extraida?'.4':'1';
+    div.innerHTML='<div class="chuleta-num">'+p.orden+'</div>'
+      +'<div class="chuleta-info">'
+      +'<div><span class="chuleta-cat" style="background:'+meta.bg+';color:'+meta.color+';border:1px solid '+meta.color+'33">'+meta.tag+'</span></div>'
+      +'<div class="chuleta-title">'+(p.extraida?'✓ ':'')+p.emoji+' '+p.titulo+'</div>'
+      +'<div class="chuleta-desc">'+p.descripcion+'</div>'
+      +'</div>';
+    chuleta.appendChild(div);
+  });
+}
+
+function adminAnadirTiradas(){
+  const n=parseInt(document.getElementById('admin-tiradas-n').value);
   if(!n||n<1||isNaN(n)){toast('Número inválido');return;}
   tiradasDisp+=n;
   updateStats();
-  toast('✅ '+n+' tirada'+(n>1?'s':'')+' habilitada'+(n>1?'s':'')+'. Total disponibles: '+(tiradasDisp-tiradasUsadas));
+  renderAdminPanel();
+  toast('✅ '+n+' tirada'+(n>1?'s':'')+' añadida'+(n>1?'s':''));
 }
+
+function adminForzarPrueba(){
+  const sel=document.getElementById('admin-override-select');
+  const id=parseInt(sel.value);
+  if(!id){forzarPruebaId=null;toast('Forzado eliminado');renderAdminPanel();return;}
+  forzarPruebaId=id;
+  const p=allPruebas.find(x=>x.id===id);
+  toast('Próxima prueba forzada: '+p.titulo);
+  renderAdminPanel();
+}
+
+function adminForzarComodin(){
+  const sel=document.getElementById('admin-comodin-select');
+  forzarComodin=sel.value||null;
+  toast(forzarComodin?'Próximo comodín: '+forzarComodin:'Comodín en modo aleatorio');
+  renderAdminPanel();
+}
+
+function adminQuitarForzado(){
+  forzarComodin=null;
+  toast('Comodín vuelve a ser aleatorio');
+  renderAdminPanel();
+}
+
+async function adminReset(){
+  if(!confirm('¿Reiniciar TODA la partida? Se perderá todo el progreso.'))return;
+  try{
+    await apiFetch('/api/reset',{method:'POST',body:JSON.stringify({clave:'lapuri'})});
+    await loadPruebas();
+    clearChute();
+    balls=[];grabbed=null;wireLen=0;phase='idle';animating=false;
+    ballsExtracted=0;wildcards=0;tiradasDisp=0;tiradasUsadas=0;comodinesUsados=[];
+    forzarComodin=null;forzarPruebaId=null;
+    milestoneShown={continuas:false,dia1:false,all:false};
+    makeBalls();settle(120);updateStats();renderPanel();
+    closeAdminPanel();
+    toast('Partida reiniciada ✓');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+// habilitarTiradas: movida al panel admin
 
 async function confirmReset(){
   if(document.body.classList.contains('locked')){showUnlock();return;}
