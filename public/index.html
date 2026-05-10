@@ -401,8 +401,8 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
 </div>
 </div>
 
-<div id="reset-wrap">
-  <button id="admin-open-btn" onclick="showAdminPanel()" style="background:rgba(20,20,50,.9);border:1.5px solid rgba(100,100,200,.3);color:var(--txt2);font-size:18px;width:52px;height:52px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s" title="Panel admin">🕵️</button>
+<div id="reset-wrap" style="position:relative;z-index:9002">
+  <button id="admin-open-btn" onclick="showAdminPanel()" style="background:rgba(20,20,50,.9);border:1.5px solid rgba(100,100,200,.3);color:var(--txt2);font-size:18px;width:52px;height:52px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;position:relative;z-index:9100;pointer-events:all" title="Panel admin">🕵️</button>
 </div>
 
 <!-- CARD MODAL -->
@@ -1427,9 +1427,10 @@ function toast(msg){
    ADMIN PANEL
 ══════════════════════════════════════════════════ */
 function showAdminPanel(){
-  if(document.body.classList.contains('locked')){showUnlock();return;}
+  // El panel admin es independiente del lock de espectador
   if(!adminUnlocked){
     const clave=prompt('Contraseña admin:');
+    if(clave===null||clave===''){return;}
     if(clave!==TIRADAS_PASSWORD){toast('Contraseña incorrecta');return;}
     adminUnlocked=true;
   }
