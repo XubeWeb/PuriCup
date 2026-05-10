@@ -1452,28 +1452,10 @@ function renderAdminPanel(){
     const order={continuas:0,dia1:1,dia2:2};
     return order[a.categoria]-order[b.categoria]||a.orden-b.orden;
   });
-  let nextLabel='Sin pruebas restantes';
-  if(forzarPruebaId){
-    const fp=allPruebas.find(p=>p.id===forzarPruebaId);
-    nextLabel=fp?'🔒 FORZADA: #'+fp.orden+' '+fp.titulo:'Prueba no encontrada';
-  } else if(ordered.length>0){
-    const n=ordered[0];
-    nextLabel='#'+n.orden+' ['+CAT[n.categoria].tag+'] '+n.titulo;
-  }
-  document.getElementById('admin-next-prueba').textContent=nextLabel;
+  // El label de próxima se actualiza en renderDragList
 
-  // Select forzar próxima prueba
-  const sel=document.getElementById('admin-override-select');
-  sel.innerHTML='<option value="">— Forzar próxima prueba —</option>';
-  // PostgreSQL devuelve extraida como boolean o como 0/1 — normalizar
-  const remaining = allPruebas.filter(p=>!p.extraida).sort((a,b)=>a.orden-b.orden);
-  remaining.forEach(p=>{
-    const opt=document.createElement('option');
-    opt.value=p.id;
-    opt.textContent='#'+p.orden+' ['+CAT[p.categoria].tag+'] '+p.titulo;
-    if(forzarPruebaId===p.id) opt.selected=true;
-    sel.appendChild(opt);
-  });
+  // Render drag list
+  renderDragList();
 
   // Select comodín forzado
   const selC=document.getElementById('admin-comodin-select');
