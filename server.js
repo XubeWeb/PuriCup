@@ -192,6 +192,35 @@ app.post('/api/config', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/pruebas — añadir nueva prueba
+app.post('/api/pruebas', async (req, res) => {
+  try {
+    const { categoria, titulo, descripcion, emoji } = req.body;
+    if (!categoria || !titulo || !descripcion) return res.status(400).json({ error: 'Faltan campos' });
+    // Calcular nuevo id y orden (máximo actual + 1)
+    const { rows: maxRows } = await pool.query('SELECT MAX(id) as maxid, MAX(orden) as maxorden FROM pruebas');
+    const newId    = (maxRows[0].maxid    || 0) + 1;
+    const newOrden = (maxRows[0].maxorden || 0) + 1;
+    await pool.query(
+      'INSERT INTO pruebas (id,orden,categoria,titulo,descripcion,emoji) VALUES ($1,$2,$3,$4,$5,$6)',
+      [newId, newOrden, categoria, titulo, descripcion, emoji || '🎯']
+    );
+    const { rows } = await pool.query('SELECT * FROM pruebas WHERE id=$1', [newId]);
+    res.json({ ok: true, prueba: rows[0] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PATCH /api/pruebas/:id/categoria — cambiar categoría
+app.patch('/api/pruebas/:id/categoria', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { categoria } = req.body;
+    if (!['continuas','dia1','dia2'].includes(categoria)) return res.status(400).json({ error: 'Categoría inválida' });
+    await pool.query('UPDATE pruebas SET categoria=$1 WHERE id=$2', [categoria, id]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/pruebas/reordenar — [{id, nuevo_orden}, ...]
 app.post('/api/pruebas/reordenar', async (req, res) => {
   try {

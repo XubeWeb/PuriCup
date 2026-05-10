@@ -501,6 +501,25 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
       <button class="admin-btn" onclick="adminQuitarForzado()" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--txt2);font-size:11px">Quitar forzado</button>
     </div>
 
+    <!-- Añadir prueba -->
+    <div class="admin-section">
+      <h3>➕ AÑADIR PRUEBA</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <input id="new-emoji" type="text" placeholder="Emoji 🎯" maxlength="4"
+          style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:14px;font-family:var(--fb);text-align:center">
+        <select id="new-cat" style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fb)">
+          <option value="continuas">🔁 Continua</option>
+          <option value="dia1">☀️ Día 1</option>
+          <option value="dia2">🌙 Día 2</option>
+        </select>
+      </div>
+      <input id="new-titulo" type="text" placeholder="Título de la prueba" maxlength="60"
+        style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fb);width:100%">
+      <textarea id="new-desc" placeholder="Descripción detallada de la prueba…" rows="3"
+        style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:11px;font-family:var(--fb);width:100%;resize:vertical"></textarea>
+      <button class="admin-btn primary" onclick="adminAnadirPrueba()">➕ Añadir prueba</button>
+    </div>
+
     <!-- Reiniciar -->
     <div class="admin-section">
       <h3>⚠️ ZONA DE PELIGRO</h3>
@@ -1527,6 +1546,24 @@ function buildDragDOM(list){
     info.innerHTML='<div class="drag-title">'+p.emoji+' '+p.titulo+'</div>'
       +'<div class="drag-desc">'+p.descripcion+'</div>';
 
+    // Selector de categoría (solo si no extraída)
+    if(!p.extraida){
+      const catSel=document.createElement('select');
+      catSel.style.cssText='background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:2px 4px;font-size:9px;font-family:var(--fb);margin-top:3px;width:100%';
+      ['continuas','dia1','dia2'].forEach(c=>{
+        const o=document.createElement('option');
+        o.value=c;
+        o.textContent={continuas:'🔁 Continua',dia1:'☀️ Día 1',dia2:'🌙 Día 2'}[c];
+        if(p.categoria===c) o.selected=true;
+        catSel.appendChild(o);
+      });
+      catSel.onchange=async(e)=>{
+        e.stopPropagation();
+        await adminCambiarCategoria(p.id, e.target.value);
+      };
+      info.appendChild(catSel);
+    }
+
     // Botones ▲▼ (siempre visibles, funcionan en móvil y desktop)
     const btns=document.createElement('div');
     btns.style.cssText='display:flex;flex-direction:column;gap:2px;flex-shrink:0';
@@ -1615,6 +1652,44 @@ function swapToPosition(fromIdx, toIdx){
   // Label próxima
   const next=dragOrder.filter(p=>!p.extraida)[0];
   if(next) document.getElementById('admin-next-prueba').textContent='▶ Siguiente: '+next.emoji+' '+next.titulo+' ['+CAT[next.categoria].tag+']';
+}
+
+async function adminCambiarCategoria(id, nuevaCat){
+  try{
+    const res=await fetch('/api/pruebas/'+id+'/categoria',{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({categoria:nuevaCat})
+    });
+    if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
+    const p=allPruebas.find(x=>x.id===id);
+    if(p) p.categoria=nuevaCat;
+    renderPanel();
+    renderDragList();
+    toast('Categoría actualizada ✓');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+async function adminAnadirPrueba(){
+  const emoji=document.getElementById('new-emoji').value.trim()||'🎯';
+  const cat=document.getElementById('new-cat').value;
+  const titulo=document.getElementById('new-titulo').value.trim();
+  const desc=document.getElementById('new-desc').value.trim();
+  if(!titulo){toast('Escribe un título');return;}
+  if(!desc){toast('Escribe una descripción');return;}
+  try{
+    const res=await fetch('/api/pruebas',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({categoria:cat,titulo,descripcion:desc,emoji})
+    });
+    if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
+    document.getElementById('new-emoji').value='';
+    document.getElementById('new-titulo').value='';
+    document.getElementById('new-desc').value='';
+    await loadPruebas();
+    makeBalls();settle(60);
+    updateStats();renderPanel();renderDragList();
+    toast('✅ Prueba añadida a la máquina');
+  }catch(e){toast('Error: '+e.message);}
 }
 
 async function adminGuardarOrden(){
