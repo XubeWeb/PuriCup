@@ -105,8 +105,9 @@ app.get('/api/pruebas', async (req, res) => {
 // GET /api/pruebas/next
 app.get('/api/pruebas/next', async (req, res) => {
   try {
+    const catOrder = "CASE categoria WHEN 'continuas' THEN 0 WHEN 'dia1' THEN 1 ELSE 2 END";
     const { rows } = await pool.query(
-      'SELECT * FROM pruebas WHERE extraida=false ORDER BY orden ASC LIMIT 1'
+      `SELECT * FROM pruebas WHERE extraida=false ORDER BY orden ASC LIMIT 1`
     );
     res.json(rows[0] || { done: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -188,6 +189,19 @@ app.post('/api/config', async (req, res) => {
       [key, value]
     );
     res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/pruebas/reordenar — [{id, nuevo_orden}, ...]
+app.post('/api/pruebas/reordenar', async (req, res) => {
+  try {
+    const { orden } = req.body; // array de {id, orden}
+    if (!Array.isArray(orden)) return res.status(400).json({ error: 'Formato inválido' });
+    for (const item of orden) {
+      await pool.query('UPDATE pruebas SET orden=$1 WHERE id=$2 AND extraida=false', [item.orden, item.id]);
+    }
+    const rows = await pool.query('SELECT * FROM pruebas ORDER BY orden ASC');
+    res.json({ ok: true, pruebas: rows.rows });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
