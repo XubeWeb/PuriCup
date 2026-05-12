@@ -712,31 +712,39 @@ async function saveContadores(){
   }catch(e){}
 }
 
+// ── ESTADO GRANULAR: cada campo tiene su propia clave en /api/config ─────
+// Así dos móviles no se machacan mutuamente al guardar campos distintos
+
+async function configGet(key){ try{ const r=await fetch('/api/config/'+key); if(r.ok){const d=await r.json();return d.value;} }catch(e){} return null; }
+async function configSet(key,value){ try{ await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,value:String(value)})}); }catch(e){} }
+async function configSetJSON(key,value){ await configSet(key,JSON.stringify(value)); }
+async function configGetJSON(key,fallback){ const v=await configGet(key); try{ return v?JSON.parse(v):fallback; }catch(e){ return fallback; } }
+
 async function loadEstadoJuego(){
   try{
-    const r=await fetch('/api/config/estado_juego');
-    if(r.ok){
-      const d=await r.json();
-      if(d.value){
-        const st=JSON.parse(d.value);
-        tiradasDisp   = st.tiradasDisp   || 0;
-        tiradasUsadas = st.tiradasUsadas  || 0;
-        wildcards     = st.wildcards      || 0;
-        comodinesUsados = st.comodinesUsados || [];
-        ballsExtracted  = st.ballsExtracted  || 0;
-        forzarComodin   = st.forzarComodin   || null;
-      }
-    }
+    const [td,tu,wc,cu,be,fc] = await Promise.all([
+      configGet('tiradas_disp'),
+      configGet('tiradas_usadas'),
+      configGet('wildcards'),
+      configGetJSON('comodines_usados',[]),
+      configGet('balls_extracted'),
+      configGet('forzar_comodin'),
+    ]);
+    if(td!==null) tiradasDisp    = parseInt(td)||0;
+    if(tu!==null) tiradasUsadas  = parseInt(tu)||0;
+    if(wc!==null) wildcards      = parseInt(wc)||0;
+    if(cu!==null) comodinesUsados= cu;
+    if(be!==null) ballsExtracted = parseInt(be)||0;
+    forzarComodin = fc||null;
   }catch(e){}
 }
 
-async function saveEstadoJuego(){
-  try{
-    const st={tiradasDisp,tiradasUsadas,wildcards,comodinesUsados,ballsExtracted,forzarComodin};
-    await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({key:'estado_juego',value:JSON.stringify(st)})});
-  }catch(e){}
-}
+// Guardar solo el campo que cambia
+async function saveTiradas(){ await Promise.all([configSet('tiradas_disp',tiradasDisp),configSet('tiradas_usadas',tiradasUsadas)]); }
+async function saveWildcards(){ await Promise.all([configSet('wildcards',wildcards),configSetJSON('comodines_usados',comodinesUsados)]); }
+async function saveBallsExtracted(){ await configSet('balls_extracted',ballsExtracted); }
+async function saveForzarComodin(){ await configSet('forzar_comodin',forzarComodin||''); }
+async function saveEstadoJuego(){ await Promise.all([saveTiradas(),saveWildcards(),saveBallsExtracted(),saveForzarComodin()]); }
 
 async function loadPruebas() {
   const data = await apiFetch('/api/pruebas');
@@ -780,7 +788,7 @@ async function doUnextract(id) {
     wildcards++;
     updateStats();
     toast('🃏 ¡Comodín recuperado! Ahora tienes ' + wildcards);
-    saveEstadoJuego();
+    saveWildcards();
   }
 }
 
@@ -1013,7 +1021,7 @@ function gameLoop(){
       grabbed=null;
       tiradasUsadas++; // solo resta si cogió bola
       updateStats();
-      saveEstadoJuego();
+      saveTiradas();
       doExtractAndAdd(col, pruebaId);
     }
     clawTX=210;phase='idle';animating=false;
@@ -1057,6 +1065,7 @@ function tryGrab(){
 async function doExtractAndAdd(ballColor, pruebaId){
   try {
     ballsExtracted++;
+    saveBallsExtracted();
 
     // ¿comodín?
     if(WILDCARD_BALLS.includes(ballsExtracted)){
@@ -1064,7 +1073,7 @@ async function doExtractAndAdd(ballColor, pruebaId){
       updateStats();
       addWildcardToChute();
       toast('🃏 ¡Comodín desbloqueado! Ya tienes '+wildcards);
-      saveEstadoJuego();
+      saveWildcards();
     }
 
     const prueba = await doExtract();
@@ -1383,7 +1392,7 @@ function borrarComodinUsado(i){
   comodinesUsados.splice(i,1);
   wildcards++;
   updateStats();
-  saveEstadoJuego();
+  saveWildcards();
 }
 
 /* ══════════════════════════════════════════════════
@@ -1468,7 +1477,7 @@ function spinRoulette(){
         disp.style.color=isN?'rgba(255,255,255,.25)':'#fff';
         rouletteResult=finalName;
         forzarComodin=null;
-        saveEstadoJuego();
+        saveForzarComodin();
       } else {
         rouletteResult=names[(i-1)%names.length];
       }
@@ -1485,7 +1494,7 @@ async function confirmRoulette(){
   const nombre=rouletteResult||'?';
   comodinesUsados.push({nombre});
   updateStats();
-  saveEstadoJuego();
+  saveWildcards();
   if(nombre&&!nombre.includes('Nadie')){
     toast('🃏 '+nombre+' te ayudará — ¡a por ello!');
   } else {
@@ -1646,7 +1655,7 @@ function adminAnadirTiradas(){
   const n=parseInt(document.getElementById('admin-tiradas-n').value);
   if(!n||n<1||isNaN(n)){toast('Número inválido');return;}
   tiradasDisp+=n;
-  updateStats();renderAdminPanel();saveEstadoJuego();
+  updateStats();renderAdminPanel();saveTiradas();
   toast('✅ '+n+' tirada'+(n>1?'s':'')+' añadida'+(n>1?'s':''));
 }
 
@@ -1873,20 +1882,20 @@ function adminQuitarTiradas(){
   const quitar=Math.min(n,avail);
   if(quitar<=0){toast('No hay tiradas disponibles para quitar');return;}
   tiradasDisp-=quitar;
-  updateStats();renderAdminPanel();saveEstadoJuego();
+  updateStats();renderAdminPanel();saveTiradas();
   toast('－'+quitar+' tirada'+(quitar>1?'s':'')+' quitada'+(quitar>1?'s':''));
 }
 
 function adminAnadirComodin(){
   wildcards++;
-  updateStats();renderAdminPanel();saveEstadoJuego();
+  updateStats();renderAdminPanel();saveWildcards();
   toast('🃏 Comodín añadido — total: '+wildcards);
 }
 
 function adminQuitarComodin(){
   if(wildcards<=0){toast('No hay comodines para quitar');return;}
   wildcards--;
-  updateStats();renderAdminPanel();saveEstadoJuego();
+  updateStats();renderAdminPanel();saveWildcards();
   toast('🃏 Comodín quitado — total: '+wildcards);
 }
 
@@ -1933,14 +1942,14 @@ function adminContador(id){
 function adminForzarComodin(){
   const sel=document.getElementById('admin-comodin-select');
   forzarComodin=sel.value||null;
-  saveEstadoJuego();
+  saveForzarComodin();
   toast(forzarComodin?'✅ Próximo comodín forzado: '+forzarComodin:'Comodín en modo aleatorio');
   renderAdminPanel();
 }
 
 function adminQuitarForzado(){
   forzarComodin=null;
-  saveEstadoJuego();
+  saveForzarComodin();
   toast('Comodín vuelve a ser aleatorio');
   renderAdminPanel();
 }
