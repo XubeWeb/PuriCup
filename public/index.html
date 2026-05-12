@@ -281,7 +281,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
 }
 
 /* ── ADMIN PANEL ── */
-#admin-overlay{position:fixed;inset:0;z-index:9800;background:rgba(0,0,10,.96);
+#admin-overlay{position:fixed;inset:0;z-index:9800;pointer-events:all;background:rgba(0,0,10,.96);
   align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto;backdrop-filter:blur(10px)}
 #admin-overlay.show{display:flex !important}
 #admin-box{background:#0c0c22;border:1.5px solid rgba(100,100,200,.3);border-radius:18px;
@@ -483,7 +483,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
 </div>
 
 <!-- ADMIN PANEL -->
-<div id="admin-overlay" style="display:none" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
+<div id="admin-overlay" style="display:none" ontouchstart="event.stopPropagation()" ontouchmove="event.stopPropagation()" onclick="event.stopPropagation()">
   <div id="admin-box">
     <h2>🕵️ PANEL ADMIN <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,.08);border:none;color:var(--txt2);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px">✕</button></h2>
 
@@ -574,7 +574,7 @@ const TIRADAS_PASSWORD   = 'elrichi';
 
 // URL de la imagen del reverso de las cartas (deja null si no tienes aún)
 // Para usarla: sube la imagen a un hosting (ej: imgur.com) y pega la URL aquí
-const BACK_IMAGE_URL = 'https://i.imgur.com/8gYbqOf.png';
+const BACK_IMAGE_URL = 'https://i.imgur.com/lXIKum7.png';
 
 // Asistentes para la ruleta de comodines
 const ASISTENTES = ['Rafa','Alberto','Dani','Kim','Ansano','Javi','Jossan','Ramon','Nadie 😢'];
@@ -712,6 +712,31 @@ async function saveContadores(){
   }catch(e){}
 }
 
+async function loadEstadoJuego(){
+  try{
+    const r=await fetch('/api/config/estado_juego');
+    if(r.ok){
+      const d=await r.json();
+      if(d.value){
+        const st=JSON.parse(d.value);
+        tiradasDisp   = st.tiradasDisp   || 0;
+        tiradasUsadas = st.tiradasUsadas  || 0;
+        wildcards     = st.wildcards      || 0;
+        comodinesUsados = st.comodinesUsados || [];
+        ballsExtracted  = st.ballsExtracted  || 0;
+      }
+    }
+  }catch(e){}
+}
+
+async function saveEstadoJuego(){
+  try{
+    const st={tiradasDisp,tiradasUsadas,wildcards,comodinesUsados,ballsExtracted};
+    await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({key:'estado_juego',value:JSON.stringify(st)})});
+  }catch(e){}
+}
+
 async function loadPruebas() {
   const data = await apiFetch('/api/pruebas');
   // Normalizar uso_comodin: puede venir null de la BD si la columna es nueva
@@ -754,6 +779,7 @@ async function doUnextract(id) {
     wildcards++;
     updateStats();
     toast('🃏 ¡Comodín recuperado! Ahora tienes ' + wildcards);
+    saveEstadoJuego();
   }
 }
 
@@ -986,6 +1012,7 @@ function gameLoop(){
       grabbed=null;
       tiradasUsadas++; // solo resta si cogió bola
       updateStats();
+      saveEstadoJuego();
       doExtractAndAdd(col, pruebaId);
     }
     clawTX=210;phase='idle';animating=false;
@@ -1036,12 +1063,14 @@ async function doExtractAndAdd(ballColor, pruebaId){
       updateStats();
       addWildcardToChute();
       toast('🃏 ¡Comodín desbloqueado! Ya tienes '+wildcards);
+      saveEstadoJuego();
     }
 
     const prueba = await doExtract();
     if(!prueba){ toast('¡Todas las pruebas han salido!'); updateStats(); return; }
     await loadPruebas();
     await loadContadores();
+    await loadEstadoJuego();
     updateStats(); renderPanel();
     // reemplazar la bola de esa prueba en la máquina (si había más)
     if(balls.length===0&&remainingCount()>0){ makeBalls();settle(80); }
@@ -1218,6 +1247,27 @@ function renderPanel(){
       }
       const dsc=document.createElement('div');dsc.className='thumb-desc';dsc.textContent=p.descripcion;
       body.appendChild(catTag);body.appendChild(emo);body.appendChild(tit);body.appendChild(dsc);
+      // Contador debajo de la descripción
+      const cdata=contadores[p.id]||{activo:false,actual:0,total:0};
+      if(cdata.activo){
+        const crow=document.createElement('div');
+        crow.className='contador-row';
+        crow.style.marginTop='6px';
+        const btnM=document.createElement('button');btnM.textContent='－';
+        btnM.onclick=async(e)=>{e.stopPropagation();
+          if(!contadores[p.id])contadores[p.id]={activo:true,actual:0,total:0};
+          contadores[p.id].actual=Math.max(0,contadores[p.id].actual-1);
+          await saveContadores();renderPanel();};
+        const disp=document.createElement('div');disp.className='contador-display';
+        disp.textContent=cdata.actual+'/'+cdata.total;
+        const btnP=document.createElement('button');btnP.textContent='＋';
+        btnP.onclick=async(e)=>{e.stopPropagation();
+          if(!contadores[p.id])contadores[p.id]={activo:true,actual:0,total:0};
+          contadores[p.id].actual=Math.min(contadores[p.id].total||999,contadores[p.id].actual+1);
+          await saveContadores();renderPanel();};
+        crow.appendChild(btnM);crow.appendChild(disp);crow.appendChild(btnP);
+        body.appendChild(crow);
+      }
       body.style.cursor='pointer';
       body.onclick=()=>{
         buildCardFace(document.getElementById('cf-front'),p,false); // reverso en frontal
@@ -1233,27 +1283,6 @@ function renderPanel(){
       };
 
       // actions row
-      // Contador
-      const cdata=contadores[p.id]||{activo:false,actual:0,total:0};
-      if(cdata.activo){
-        const crow=document.createElement('div');
-        crow.className='contador-row';
-        const btnM=document.createElement('button');btnM.textContent='－';
-        btnM.onclick=async(e)=>{e.stopPropagation();
-          if(!contadores[p.id])contadores[p.id]={activo:true,actual:0,total:0};
-          contadores[p.id].actual=Math.max(0,contadores[p.id].actual-1);
-          await saveContadores();renderPanel();};
-        const disp=document.createElement('div');disp.className='contador-display';
-        disp.textContent=cdata.actual+'/'+cdata.total;
-        const btnP=document.createElement('button');btnP.textContent='＋';
-        btnP.onclick=async(e)=>{e.stopPropagation();
-          if(!contadores[p.id])contadores[p.id]={activo:true,actual:0,total:0};
-          contadores[p.id].actual=Math.min(contadores[p.id].total||999,contadores[p.id].actual+1);
-          await saveContadores();renderPanel();};
-        crow.appendChild(btnM);crow.appendChild(disp);crow.appendChild(btnP);
-        th.appendChild(crow);
-      }
-
       const actions=document.createElement('div');actions.className='thumb-actions';
 
       const statusBtn=document.createElement('button');statusBtn.className='status-btn';
@@ -1353,6 +1382,7 @@ function borrarComodinUsado(i){
   comodinesUsados.splice(i,1);
   wildcards++;
   updateStats();
+  saveEstadoJuego();
 }
 
 /* ══════════════════════════════════════════════════
@@ -1447,6 +1477,7 @@ async function confirmRoulette(){
   const nombre=rouletteResult||'?';
   comodinesUsados.push({nombre});
   updateStats();
+  saveEstadoJuego();
   if(nombre&&!nombre.includes('Nadie')){
     toast('🃏 '+nombre+' te ayudará — ¡a por ello!');
   } else {
@@ -1522,7 +1553,6 @@ function toast(msg){
    ADMIN PANEL
 ══════════════════════════════════════════════════ */
 function showAdminPanel(){
-  // El panel admin es independiente del lock de espectador
   if(!adminUnlocked){
     const clave=prompt('Contraseña admin:');
     if(clave===null||clave===''){return;}
@@ -1531,11 +1561,18 @@ function showAdminPanel(){
   }
   renderAdminPanel();
   document.getElementById('admin-overlay').classList.add('show');
+  document.getElementById('lock-overlay').style.display='none';
 }
 
 function closeAdminPanel(){
   document.getElementById('admin-overlay').classList.remove('show');
+  // Restaurar lock-overlay
+  if(document.body.classList.contains('locked')){
+    document.getElementById('lock-overlay').style.display='';
+  }
 }
+
+
 
 function renderAdminPanel(){
   // Tiradas
@@ -1601,8 +1638,7 @@ function adminAnadirTiradas(){
   const n=parseInt(document.getElementById('admin-tiradas-n').value);
   if(!n||n<1||isNaN(n)){toast('Número inválido');return;}
   tiradasDisp+=n;
-  updateStats();
-  renderAdminPanel();
+  updateStats();renderAdminPanel();saveEstadoJuego();
   toast('✅ '+n+' tirada'+(n>1?'s':'')+' añadida'+(n>1?'s':''));
 }
 
@@ -1651,12 +1687,12 @@ function buildDragDOM(list){
     info.style.cssText='flex:1;min-width:0;overflow:hidden';
     const cdat=contadores[p.id]||{activo:false,actual:0,total:0};
     const cicon=cdat.activo?'🔢 '+cdat.actual+'/'+cdat.total:'🔢';
-    info.innerHTML='<div class="drag-title">'+p.emoji+' '+p.titulo
+    info.innerHTML='<div class="drag-title" style="font-size:10px;font-weight:700">'+p.emoji+' '+p.titulo
       +'<span onclick="event.stopPropagation();adminContador('+p.id+')" '
       +'style="margin-left:6px;font-size:9px;opacity:.6;cursor:pointer;background:rgba(0,224,255,.1);'
       +'border-radius:4px;padding:1px 5px;border:1px solid rgba(0,224,255,.2);color:var(--neon2)">'
       +cicon+'</span></div>'
-      +'<div class="drag-desc">'+p.descripcion+'</div>';
+      +'<div class="drag-desc" style="font-size:7px;color:rgba(150,160,200,.7);margin-top:1px">'+p.descripcion+'</div>';
 
     // Selector de categoría (solo si no extraída)
     if(!p.extraida){
@@ -1829,20 +1865,20 @@ function adminQuitarTiradas(){
   const quitar=Math.min(n,avail);
   if(quitar<=0){toast('No hay tiradas disponibles para quitar');return;}
   tiradasDisp-=quitar;
-  updateStats();renderAdminPanel();
+  updateStats();renderAdminPanel();saveEstadoJuego();
   toast('－'+quitar+' tirada'+(quitar>1?'s':'')+' quitada'+(quitar>1?'s':''));
 }
 
 function adminAnadirComodin(){
   wildcards++;
-  updateStats();renderAdminPanel();
+  updateStats();renderAdminPanel();saveEstadoJuego();
   toast('🃏 Comodín añadido — total: '+wildcards);
 }
 
 function adminQuitarComodin(){
   if(wildcards<=0){toast('No hay comodines para quitar');return;}
   wildcards--;
-  updateStats();renderAdminPanel();
+  updateStats();renderAdminPanel();saveEstadoJuego();
   toast('🃏 Comodín quitado — total: '+wildcards);
 }
 
@@ -1919,6 +1955,7 @@ async function adminReset(){
     balls=[];grabbed=null;wireLen=0;phase='idle';animating=false;
     ballsExtracted=0;wildcards=0;tiradasDisp=0;tiradasUsadas=0;comodinesUsados=[];
     forzarComodin=null;forzarPruebaId=null;
+    saveEstadoJuego();saveContadores();
     milestoneShown={continuas:false,dia1:false,all:false};
     makeBalls();settle(120);updateStats();renderPanel();
     closeAdminPanel();
