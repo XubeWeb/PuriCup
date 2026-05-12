@@ -724,6 +724,7 @@ async function loadEstadoJuego(){
         wildcards     = st.wildcards      || 0;
         comodinesUsados = st.comodinesUsados || [];
         ballsExtracted  = st.ballsExtracted  || 0;
+        forzarComodin   = st.forzarComodin   || null;
       }
     }
   }catch(e){}
@@ -731,7 +732,7 @@ async function loadEstadoJuego(){
 
 async function saveEstadoJuego(){
   try{
-    const st={tiradasDisp,tiradasUsadas,wildcards,comodinesUsados,ballsExtracted};
+    const st={tiradasDisp,tiradasUsadas,wildcards,comodinesUsados,ballsExtracted,forzarComodin};
     await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({key:'estado_juego',value:JSON.stringify(st)})});
   }catch(e){}
@@ -1169,6 +1170,8 @@ function buildCardFace(el, prueba, isFront){
     // REVERSO — imagen o diseño genérico
     if(BACK_IMAGE_URL){
       el.classList.add('has-back-img');
+      el.style.border='2px solid #ff1f6e';
+      el.style.boxShadow='0 0 18px rgba(255,31,110,.5), 0 0 40px rgba(255,31,110,.2)';
       const img=document.createElement('img');img.src=BACK_IMAGE_URL;img.alt='Reverso';
       el.appendChild(img);
     } else {
@@ -1434,22 +1437,13 @@ let rouletteInterval;
 function spinRoulette(){
   document.getElementById('roulette-spin').disabled=true;
   const names=ASISTENTES;
+  const forced=forzarComodin||null;
 
-  // Si hay comodín forzado por admin, usarlo directamente
-  if(forzarComodin){
-    const forced=forzarComodin;
-    forzarComodin=null;
-    rouletteResult=forced;
-    const disp=document.getElementById('roulette-display');
-    disp.textContent=forced;
-    disp.style.color=forced.includes('Nadie')?'rgba(255,255,255,.25)':'#fff';
-    document.getElementById('roulette-spin').disabled=false;
-    document.getElementById('roulette-spin').textContent='✓ Confirmar: '+forced;
-    document.getElementById('roulette-spin').onclick=confirmRoulette;
-    return;
-  }
+  // Siempre animar la ruleta
+  let i=Math.floor(Math.random()*names.length);
+  let spins=0;
+  const maxSpins=forced ? 28+Math.floor(Math.random()*8) : 30+Math.floor(Math.random()*20);
 
-  let i=0,spins=0,maxSpins=30+Math.floor(Math.random()*20);
   clearInterval(rouletteInterval);
   rouletteInterval=setInterval(()=>{
     const name=names[i%names.length];
@@ -1459,14 +1453,30 @@ function spinRoulette(){
     disp.className='roulette-display'+(isNadie?' nobody':'');
     disp.style.color=isNadie?'rgba(255,255,255,.25)':'#fff';
     i++;spins++;
+
+    // Frenar progresivamente
+    const delay=60+spins*2.5;
+
     if(spins>=maxSpins){
       clearInterval(rouletteInterval);
-      rouletteResult=names[(i-1)%names.length];
+      // Si hay forzado, terminar en el nombre correcto
+      if(forced){
+        const idx=names.indexOf(forced);
+        const finalName=idx>=0?forced:names[(i-1)%names.length];
+        const isN=finalName.includes('Nadie');
+        disp.textContent=finalName;
+        disp.style.color=isN?'rgba(255,255,255,.25)':'#fff';
+        rouletteResult=finalName;
+        forzarComodin=null;
+        saveEstadoJuego();
+      } else {
+        rouletteResult=names[(i-1)%names.length];
+      }
       document.getElementById('roulette-spin').disabled=false;
       document.getElementById('roulette-spin').textContent='✓ Confirmar ayuda';
       document.getElementById('roulette-spin').onclick=confirmRoulette;
     }
-  },80+(spins*1.5));
+  },80);
 }
 
 async function confirmRoulette(){
@@ -1923,12 +1933,14 @@ function adminContador(id){
 function adminForzarComodin(){
   const sel=document.getElementById('admin-comodin-select');
   forzarComodin=sel.value||null;
-  toast(forzarComodin?'Próximo comodín: '+forzarComodin:'Comodín en modo aleatorio');
+  saveEstadoJuego();
+  toast(forzarComodin?'✅ Próximo comodín forzado: '+forzarComodin:'Comodín en modo aleatorio');
   renderAdminPanel();
 }
 
 function adminQuitarForzado(){
   forzarComodin=null;
+  saveEstadoJuego();
   toast('Comodín vuelve a ser aleatorio');
   renderAdminPanel();
 }
