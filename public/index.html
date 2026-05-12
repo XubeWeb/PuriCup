@@ -1069,8 +1069,6 @@ async function doExtractAndAdd(ballColor, pruebaId){
     const prueba = await doExtract();
     if(!prueba){ toast('¡Todas las pruebas han salido!'); updateStats(); return; }
     await loadPruebas();
-    await loadContadores();
-    await loadEstadoJuego();
     updateStats(); renderPanel();
     // reemplazar la bola de esa prueba en la máquina (si había más)
     if(balls.length===0&&remainingCount()>0){ makeBalls();settle(80); }
@@ -1988,32 +1986,22 @@ async function confirmReset(){
 ══════════════════════════════════════════════════ */
 async function init(){
   try{
-    await loadPruebas();
-    // recalcular ballsExtracted desde BD
-    ballsExtracted=extractedCount();
-    // recalcular comodines ganados
-    // comodines ganados menos los gastados (que no se recuperaron)
-    const wildcardsGanados = WILDCARD_BALLS.filter(n=>n<=ballsExtracted).length;
-    const wildcardsGastados = allPruebas.filter(p=>p.uso_comodin).length;
-    wildcards = Math.max(0, wildcardsGanados - wildcardsGastados);
+    // 1. Cargar pruebas y estado guardado en paralelo
+    await Promise.all([loadPruebas(), loadContadores(), loadEstadoJuego()]);
+    // 2. ballsExtracted viene de loadEstadoJuego — solo usar BD como fallback si es 0
+    if(ballsExtracted===0) ballsExtracted=extractedCount();
+    // 3. Construir máquina
     makeBalls();settle(120);
     updateStats();renderPanel();
     document.getElementById('loading').classList.add('hidden');
-    // mostrar welcome si es primera vez en esta sesión
-    // Mostrar welcome solo si no se ha extraído ninguna prueba aún
-    // Esto es 100% fiable: si ballsExtracted==0 es que nadie ha jugado todavía
-    if(ballsExtracted === 0){
+    // 4. Welcome solo si no hay nada extraído aún
+    if(ballsExtracted===0){
       setTimeout(()=>document.getElementById('welcome-overlay').classList.add('show'),400);
     }
-    // Tiradas: arrancan en 0, admin las habilita manualmente
-    tiradasDisp  = 0;
-    tiradasUsadas= 0;
-    comodinesUsados = [];
-    updateStats();
     initUnlockInput();
     requestAnimationFrame(gameLoop);
   }catch(e){
-    document.getElementById('loading').innerHTML=`<h2 style="color:var(--neon)">ERROR</h2><p style="color:var(--txt2)">${e.message}</p>`;
+    document.getElementById('loading').innerHTML='<h2 style="color:var(--neon)">ERROR</h2><p style="color:var(--txt2)">'+e.message+'</p>';
   }
 }
 init();
