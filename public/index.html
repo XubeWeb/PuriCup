@@ -447,7 +447,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
   <div class="cat-block" id="cat-sorpresa-block" style="display:none">
     <div class="cat-header">
       <div class="cat-pill" style="background:rgba(170,68,255,.12);color:#aa44ff;border:1px solid rgba(170,68,255,.25)">SORPRESA</div>
-      <div class="cat-name" style="color:#aa44ff">Sorpresas</div>
+      <div class="cat-name" style="color:#aa44ff">Sorpresas <span style="font-family:var(--fb);font-size:11px;font-weight:400;color:rgba(170,68,255,.6);letter-spacing:0">(no cuentan para el cómputo final)</span></div>
       <div class="cat-stats" id="stats-sorpresa">—</div>
     </div>
     <div class="cards-grid" id="grid-sorpresa"><div class="empty-msg">Sin sorpresas activadas aún</div></div>
@@ -534,6 +534,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
       <li><span class="instr-icon">🃏</span><span>Los comodines pueden ayudarte, pero <strong>no te salvan del ridículo.</strong></span></li>
       <li><span class="instr-icon">👰</span><span><strong>La Puri debe ir siempre contigo.</strong> Sin excepciones.</span></li>
       <li><span class="instr-icon">⚖️</span><span><strong>Aquí no se discute con la máquina.</strong> Lo que sale, sale.</span></li>
+      <li><span class="instr-icon">✨</span><span>Pueden suceder <strong>eventos sorpresa</strong> en cualquier momento. Son especiales y <strong>no cuentan para el cómputo final</strong> de pruebas.</span></li>
     </ul>
     <button class="instr-close" onclick="closeInstrucciones()">¡ENTENDIDO, A POR ELLO! 💪</button>
   </div>
@@ -543,7 +544,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
 <button id="instrucciones-fab" onclick="showInstrucciones()">📋 Instrucciones</button>
 
 <!-- ADMIN PANEL -->
-<div id="admin-overlay" style="display:none" ontouchstart="event.stopPropagation()" ontouchmove="event.stopPropagation()" onclick="event.stopPropagation()">
+<div id="admin-overlay" style="display:none" onclick="event.stopPropagation()">
   <div id="admin-box">
     <h2>🕵️ PANEL ADMIN <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,.08);border:none;color:var(--txt2);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px">✕</button></h2>
 
