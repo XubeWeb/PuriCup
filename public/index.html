@@ -1420,14 +1420,26 @@ function checkMilestones(){
 
   if(!milestoneShown.continuas && contExt>=contTotal && contTotal>0){
     milestoneShown.continuas=true;
+    saveMilestones();
     setTimeout(()=>showMilestone('continuas_done'),800);
   } else if(!milestoneShown.dia1 && d1Ext>=d1Total && d1Total>0 && milestoneShown.continuas){
     milestoneShown.dia1=true;
+    saveMilestones();
     setTimeout(()=>showMilestone('dia1_done'),800);
   } else if(!milestoneShown.all && totalExt>=allPruebas.length){
     milestoneShown.all=true;
+    saveMilestones();
     setTimeout(()=>showMilestone('all_done'),800);
   }
+}
+
+async function saveMilestones(){
+  await configSetJSON('milestones_shown', milestoneShown);
+}
+
+async function loadMilestones(){
+  const v = await configGetJSON('milestones_shown', {continuas:false,dia1:false,all:false});
+  milestoneShown = v;
 }
 
 function showMilestone(key){
@@ -2081,6 +2093,7 @@ async function adminReset(){
     forzarComodin=null;forzarPruebaId=null;
     saveEstadoJuego();saveContadores();
     milestoneShown={continuas:false,dia1:false,all:false};
+    saveMilestones();
     makeBalls();settle(120);updateStats();renderPanel();
     closeAdminPanel();
     toast('✓ Partida reiniciada');
@@ -2102,6 +2115,7 @@ async function confirmReset(){
     balls=[];grabbed=null;wireLen=0;phase='idle';animating=false;
     ballsExtracted=0;wildcards=0;tiradasDisp=0;tiradasUsadas=0;comodinesUsados=[];
     milestoneShown={continuas:false,dia1:false,all:false};
+    saveMilestones();
     makeBalls();settle(120);updateStats();renderPanel();
     toast('Partida reiniciada ✓');
   }catch(e){toast('Clave incorrecta o error.');}
@@ -2113,7 +2127,7 @@ async function confirmReset(){
 async function init(){
   try{
     // 1. Cargar pruebas y estado guardado en paralelo
-    await Promise.all([loadPruebas(), loadContadores(), loadEstadoJuego()]);
+    await Promise.all([loadPruebas(), loadContadores(), loadEstadoJuego(), loadMilestones()]);
     // 2. ballsExtracted viene de loadEstadoJuego — solo usar BD como fallback si es 0
     if(ballsExtracted===0) ballsExtracted=extractedCount();
     // 3. Construir máquina
