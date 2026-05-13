@@ -2012,7 +2012,7 @@ async function adminBorrarPrueba(){
   if(!p){toast('No encontrada');return;}
   if(!confirm('¿Borrar "'+p.titulo+'"? Esto es permanente.'))return;
   try{
-    const res=await fetch('/api/pruebas/'+id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave:'lapuri'})});
+    const res=await fetch('/api/pruebas/'+id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave:'LAPURI'})});
     if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
     await loadPruebas();
     makeBalls();settle(60);
