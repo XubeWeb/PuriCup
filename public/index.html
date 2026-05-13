@@ -1631,11 +1631,15 @@ function startDrop(){
 }
 
 document.addEventListener('keydown',e=>{
+  const tag=document.activeElement?.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
   if(e.key==='ArrowLeft'){e.preventDefault();keys.l=true;}
   if(e.key==='ArrowRight'){e.preventDefault();keys.r=true;}
   if(e.key===' '||e.key==='Enter'){e.preventDefault();startDrop();}
 });
 document.addEventListener('keyup',e=>{
+  const tag=document.activeElement?.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
   if(e.key==='ArrowLeft')keys.l=false;
   if(e.key==='ArrowRight')keys.r=false;
 });
