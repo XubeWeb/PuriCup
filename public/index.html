@@ -1703,7 +1703,13 @@ function showAdminPanel(){
     if(clave!==TIRADAS_PASSWORD){toast('Contraseña incorrecta');return;}
     adminUnlocked=true;
   }
-  renderAdminPanel();
+  try {
+    renderAdminPanel();
+  } catch(err) {
+    console.error('ERROR renderAdminPanel:', err);
+    toast('Error: ' + err.message);
+    return;
+  }
   document.getElementById('admin-overlay').classList.add('show');
   document.getElementById('lock-overlay').style.display='none';
 }
@@ -1719,6 +1725,7 @@ function closeAdminPanel(){
 
 
 function renderAdminPanel(){
+  try {
   // Tiradas
   document.getElementById('admin-tiradas-disp').textContent=Math.max(0,tiradasDisp-tiradasUsadas);
   document.getElementById('admin-tiradas-used').textContent=tiradasUsadas;
@@ -1777,6 +1784,10 @@ function renderAdminPanel(){
   if(forzarComodin){forzInfo.textContent='Forzado: '+forzarComodin;forzInfo.style.display='block';}
   else{forzInfo.style.display='none';}
 
+  } catch(err) {
+    console.error('ERROR en renderAdminPanel:', err);
+    toast('Error admin: ' + err.message);
+  }
 }
 
 function adminAnadirTiradas(){
