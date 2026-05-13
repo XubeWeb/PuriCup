@@ -373,7 +373,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
       Con las próximas pruebas demostrarás que eres apto para ello y que te mereces su corazoncito.<br><br>
       ¿Estás listo?
     </p>
-    <button class="welcome-instr-btn" onclick="showInstrucciones()">📋 Ver instrucciones primero</button>
+    <button class="welcome-instr-btn" onclick="showInstrucciones()">📋 Ver instrucciones</button>
     <button onclick="closeWelcome()">¡SÍ, ESTOY LISTO! 💪</button>
   </div>
 </div>
@@ -580,6 +580,9 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
         <option value="">— Aleatorio —</option>
       </select>
       <div id="admin-comodin-forzado" style="font-size:11px;color:var(--gold);display:none"></div>
+      <hr style="border:none;border-top:1px solid rgba(100,100,200,.1);margin:4px 0">
+      <div style="font-size:10px;color:var(--txt2);margin-bottom:4px;letter-spacing:.5px;text-transform:uppercase">Comodines usados:</div>
+      <div id="admin-comodin-usados" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px"></div>
       <div style="display:flex;gap:6px">
         <button class="admin-btn gold" onclick="adminForzarComodin()" style="flex:1">Forzar</button>
         <button class="admin-btn" onclick="adminQuitarForzado()" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--txt2);font-size:11px">Quitar forzado</button>
@@ -1470,7 +1473,8 @@ function showMilestone(key){
 }
 function closeMilestone(){ document.getElementById('milestone-overlay').classList.remove('show'); }
 
-function renderComodinesUsados(conAdmin){
+function renderComodinesUsados(){
+  // Panel público: sin botón borrar
   const lista=document.getElementById('comodin-lista');
   if(!lista)return;
   const disp=document.getElementById('comodin-disponibles');
@@ -1484,13 +1488,28 @@ function renderComodinesUsados(conAdmin){
     const tag=document.createElement('div');
     const esNadie=c.nombre.includes('Nadie');
     tag.style.cssText='display:flex;align-items:center;gap:6px;background:rgba(255,204,0,.1);border:1px solid rgba(255,204,0,.25);border-radius:100px;padding:4px 12px;font-size:12px;';
-    let html='<span style="color:var(--gold)">🃏</span>'
+    tag.innerHTML='<span style="color:var(--gold)">🃏</span>'
       +'<span style="color:'+(esNadie?'rgba(255,255,255,.35)':'var(--txt)')+'">'+c.nombre+'</span>';
-    // Botón borrar solo en modo admin
-    if(conAdmin){
-      html+='<button onclick="borrarComodinUsado('+i+')" style="background:rgba(255,50,50,.15);border:none;color:#ff7070;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:2px">✕</button>';
-    }
-    tag.innerHTML=html;
+    lista.appendChild(tag);
+  });
+}
+
+function renderComodinesAdmin(){
+  // Panel admin: con botón borrar, en elemento separado dentro del admin
+  const lista=document.getElementById('admin-comodin-usados');
+  if(!lista)return;
+  if(comodinesUsados.length===0){
+    lista.innerHTML='<div style="font-size:11px;color:var(--txt2);font-style:italic">Sin comodines usados aún</div>';
+    return;
+  }
+  lista.innerHTML='';
+  comodinesUsados.forEach((c,i)=>{
+    const tag=document.createElement('div');
+    const esNadie=c.nombre.includes('Nadie');
+    tag.style.cssText='display:flex;align-items:center;gap:6px;background:rgba(255,204,0,.08);border:1px solid rgba(255,204,0,.2);border-radius:100px;padding:3px 8px 3px 12px;font-size:11px;';
+    tag.innerHTML='<span style="color:var(--gold)">🃏</span>'
+      +'<span style="color:'+(esNadie?'rgba(255,255,255,.35)':'var(--txt)')+'">'+c.nombre+'</span>'
+      +'<button onclick="borrarComodinUsado('+i+')" style="background:rgba(255,50,50,.12);border:none;color:#ff7070;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:2px">✕</button>';
     lista.appendChild(tag);
   });
 }
@@ -1664,7 +1683,7 @@ function updateStats(){
   // botón usar comodín: desactivar si no hay
   const btn=document.getElementById('usar-comodin-btn');
   if(btn){ btn.disabled=wildcards<=0; btn.style.opacity=wildcards>0?'1':'.35'; btn.style.cursor=wildcards>0?'pointer':'not-allowed'; }
-  renderComodinesUsados(false);
+  renderComodinesUsados();
 }
 
 let toastT;
@@ -1743,7 +1762,7 @@ function renderAdminPanel(){
   // Comodines disponibles
   const wildN=document.getElementById('admin-wild-n');
   if(wildN) wildN.textContent=wildcards;
-  renderComodinesUsados(true); // con botones de borrar
+  renderComodinesAdmin();
 
   // Select comodín forzado
   const selC=document.getElementById('admin-comodin-select');
