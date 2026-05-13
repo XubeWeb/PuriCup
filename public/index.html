@@ -702,42 +702,7 @@ function showUnlock() {
   try { input.focus(); } catch(e) {}
 }
 // listener del input — se añade una vez en init
-/* ══════════════════════════════════════════════════
-   POLLING: sincronizar datos del servidor cada 8s
-   Solo actualiza si hay cambios, sin interrumpir el juego
-══════════════════════════════════════════════════ */
-let pollingActive = true;
 
-async function pollServidor(){
-  if(!pollingActive) return;
-  // No hacer polling mientras el gancho está en movimiento
-  if(phase !== 'idle') return;
-  try{
-    // Cargar estado granular del servidor
-    const [td,tu,wc,cu,be,fc,ct] = await Promise.all([
-      configGet('tiradas_disp'),
-      configGet('tiradas_usadas'),
-      configGetJSON('comodines_usados',[]),
-      configGet('wildcards'),
-      configGet('balls_extracted'),
-      configGet('forzar_comodin'),
-      configGetJSON('contadores',{}),
-    ]);
-    let changed = false;
-    if(td!==null && parseInt(td)!==tiradasDisp){ tiradasDisp=parseInt(td)||0; changed=true; }
-    if(tu!==null && parseInt(tu)!==tiradasUsadas){ tiradasUsadas=parseInt(tu)||0; changed=true; }
-    if(wc!==null && parseInt(wc)!==wildcards){ wildcards=parseInt(wc)||0; changed=true; }
-    if(cu!==null && JSON.stringify(cu)!==JSON.stringify(comodinesUsados)){ comodinesUsados=cu; changed=true; }
-    if(fc!==null && fc!==(forzarComodin||'')){ forzarComodin=fc||null; changed=true; }
-    if(ct!==null && JSON.stringify(ct)!==JSON.stringify(contadores)){ contadores=ct; changed=true; }
-    // Pruebas: solo recargar si cambió el número extraído o completado
-    const prevExt=extractedCount(), prevComp=completedCount();
-    await loadPruebas();
-    if(extractedCount()!==prevExt||completedCount()!==prevComp){ changed=true; makeBalls();settle(40); }
-    if(changed){ updateStats(); renderPanel(); }
-  }catch(e){}
-  setTimeout(pollServidor, 8000);
-}
 
 function initUnlockInput() {
   const inp = document.getElementById('unlock-input');
@@ -2160,7 +2125,7 @@ async function init(){
     }
     initUnlockInput();
     requestAnimationFrame(gameLoop);
-    setTimeout(pollServidor, 8000); // polling cada 8s
+
   }catch(e){
     document.getElementById('loading').innerHTML='<h2 style="color:var(--neon)">ERROR</h2><p style="color:var(--txt2)">'+e.message+'</p>';
   }
