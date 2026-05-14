@@ -452,6 +452,14 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
     </div>
     <div class="cards-grid" id="grid-sorpresa"><div class="empty-msg">Sin sorpresas activadas aún</div></div>
   </div>
+  <div class="cat-block" id="cat-comodin-block" style="display:none">
+    <div class="cat-header">
+      <div class="cat-pill" style="background:rgba(255,204,0,.15);color:var(--gold);border:1px solid rgba(255,204,0,.3)">COMODÍN</div>
+      <div class="cat-name" style="color:var(--gold)">Comodines <span style="font-family:var(--fb);font-size:11px;font-weight:400;color:rgba(255,204,0,.5);letter-spacing:0">(no cuentan para el cómputo final)</span></div>
+      <div class="cat-stats" id="stats-comodin">—</div>
+    </div>
+    <div class="cards-grid" id="grid-comodin"><div class="empty-msg">Sin comodines extraídos aún</div></div>
+  </div>
 </div>
 </div>
 
@@ -601,6 +609,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
           <option value="dia1">☀️ Día 1</option>
           <option value="dia2">🌙 Día 2</option>
           <option value="sorpresa">✨ Sorpresa</option>
+          <option value="comodin">🃏 Comodín</option>
         </select>
         <select id="new-pos" class="admin-select">
           <option value="0">📍 Al final</option>
@@ -662,6 +671,7 @@ const CAT = {
   dia1:     { label:'Primer día', color:'#00e0ff', tag:'DÍA 1',    bg:'rgba(0,224,255,.1)',    cardGrad:'linear-gradient(145deg,#001830,#003a5a)' },
   dia2:     { label:'Segundo día',color:'#ffcc00', tag:'DÍA 2',    bg:'rgba(255,204,0,.1)',    cardGrad:'linear-gradient(145deg,#1a1400,#3a3000)' },
   sorpresa: { label:'Sorpresa',   color:'#aa44ff', tag:'SORPRESA', bg:'rgba(170,68,255,.12)',  cardGrad:'linear-gradient(145deg,#0e0020,#2a0060)' },
+  comodin:  { label:'Comodín',   color:'#ffcc00', tag:'COMODÍN',  bg:'rgba(255,204,0,.15)',   cardGrad:'linear-gradient(145deg,#1a1000,#4a2800)' },
 };
 
 const BALL_PALETTE = [
@@ -879,8 +889,8 @@ let phase='idle',animating=false;
 let particles=[],keys={};
 
 function remainingCount(){ return allPruebas.filter(p=>!p.extraida).length; }
-function extractedCount(){ return allPruebas.filter(p=>p.extraida&&p.categoria!=='sorpresa').length; }
-function completedCount(){ return allPruebas.filter(p=>p.completada&&p.categoria!=='sorpresa').length; }
+function extractedCount(){ return allPruebas.filter(p=>p.extraida&&p.categoria!=='sorpresa'&&p.categoria!=='comodin').length; }
+function completedCount(){ return allPruebas.filter(p=>p.completada&&p.categoria!=='sorpresa'&&p.categoria!=='comodin').length; }
 
 // Orden: continuas primero, luego dia1, luego dia2
 function getOrderedRemaining(){
@@ -902,6 +912,7 @@ function makeBalls(){
       continuas:['#ff1f6e','#ff80b0'],
       dia1:     ['#00e0ff','#80f0ff'],
       dia2:     ['#ffcc00','#ffe680'],
+      comodin:  ['#ffaa00','#ffe680'],
     };
     const c = catColors[p.categoria] || BALL_PALETTE[i%BALL_PALETTE.length];
     balls.push({
@@ -1140,7 +1151,7 @@ async function doExtractAndAdd(ballColor, pruebaId){
     ballsExtracted++;
     saveBallsExtracted();
 
-    // ¿comodín?
+    // ¿comodín por número de bola?
     if(WILDCARD_BALLS.includes(ballsExtracted)){
       wildcards++;
       updateStats();
@@ -1178,21 +1189,36 @@ function addBallToChute(prueba, color){
   const ball=document.createElement('div');
   ball.className='chute-ball';
   ball.dataset.id=prueba.id;
-  const bgMap={continuas:'#ff1f6e',dia1:'#00e0ff',dia2:'#ffcc00'};
+  const bgMap={continuas:'#ff1f6e',dia1:'#00e0ff',dia2:'#ffcc00',comodin:'#ffaa00'};
   const bg=bgMap[prueba.categoria]||color;
-  ball.style.background=`radial-gradient(circle at 35% 35%,${lighten(bg)},${bg})`;
-  ball.style.boxShadow=`0 4px 16px ${bg}44,inset 0 -3px 8px rgba(0,0,0,.3),inset 0 3px 8px rgba(255,255,255,.2)`;
-  const pruebaDat=allPruebas.find(p=>p.id===prueba.id)||prueba;
-  ball.innerHTML=`<span>${pruebaDat.emoji||'🎯'}</span>`;
-  ball.addEventListener('click',()=>{ if(!ball.dataset.opened) openBall(ball,pruebaDat); });
+  // bolas comodín: clase wildcard + aspecto dorado especial
+  if(prueba.categoria==='comodin'){
+    ball.classList.add('wildcard');
+    ball.innerHTML=`<span>🃏</span>`;
+    ball.addEventListener('click',()=>{ if(!ball.dataset.opened) openWildcardBall(ball,prueba); });
+  } else {
+    ball.style.background=`radial-gradient(circle at 35% 35%,${lighten(bg)},${bg})`;
+    ball.style.boxShadow=`0 4px 16px ${bg}44,inset 0 -3px 8px rgba(0,0,0,.3),inset 0 3px 8px rgba(255,255,255,.2)`;
+    const pruebaDat=allPruebas.find(p=>p.id===prueba.id)||prueba;
+    ball.innerHTML=`<span>${pruebaDat.emoji||'🎯'}</span>`;
+    ball.addEventListener('click',()=>{ if(!ball.dataset.opened) openBall(ball,pruebaDat); });
+  }
   box.appendChild(ball);
   ball.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
+function openWildcardBall(ballEl, prueba){
+  // Cuando la bola de Supabase es categoría comodín, la tratamos como comodín:
+  // sumamos al contador de wildcards y abrimos la carta comodín
+  ballEl.dataset.opened='1';
+  wildcards++;
+  updateStats();
+  saveWildcards();
+  toast('🃏 ¡Comodín desbloqueado! Ya tienes '+wildcards);
+  openWildcardCard(ballEl);
+}
+
 function addWildcardToChute(){
-  const box=document.getElementById('chute-container');
-  const ball=document.createElement('div');
-  ball.className='chute-ball wildcard';
   ball.innerHTML='🃏';
   ball.title='Comodín — toca para ver la carta';
   ball.addEventListener('click',()=>{
@@ -1361,7 +1387,10 @@ function renderPanel(){
   // Mostrar bloque sorpresa solo si hay alguna extraída
   const sorpresaBlock=document.getElementById('cat-sorpresa-block');
   if(sorpresaBlock) sorpresaBlock.style.display=allPruebas.some(p=>p.categoria==='sorpresa'&&p.extraida)?'block':'none';
-  ['continuas','dia1','dia2','sorpresa'].forEach(cat=>{
+  // Mostrar bloque comodin solo si hay alguna extraída
+  const comodinBlock=document.getElementById('cat-comodin-block');
+  if(comodinBlock) comodinBlock.style.display=allPruebas.some(p=>p.categoria==='comodin'&&p.extraida)?'block':'none';
+  ['continuas','dia1','dia2','sorpresa','comodin'].forEach(cat=>{
     const extracted=allPruebas.filter(p=>p.categoria===cat&&p.extraida);
     const done=extracted.filter(p=>p.completada).length;
     document.getElementById('stats-'+cat).textContent=
