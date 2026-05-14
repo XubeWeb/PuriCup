@@ -206,7 +206,7 @@ app.post('/api/pruebas', async (req, res) => {
       if (destRows[0]) {
         newOrden = destRows[0].orden;
         // Desplazar las pruebas desde esa posición
-        await pool.query('UPDATE pruebas SET orden = orden + 1 WHERE orden >= $1 AND extraida = false', [newOrden]);
+        await pool.query('UPDATE pruebas SET orden = orden + 1 WHERE orden >= $1', [newOrden]);
       } else {
         const { rows: maxO } = await pool.query('SELECT MAX(orden) as maxorden FROM pruebas');
         newOrden = (maxO[0].maxorden || 0) + 1;
@@ -243,6 +243,82 @@ app.delete('/api/pruebas/:id', async (req, res) => {
     const id = parseInt(req.params.id);
     await pool.query('DELETE FROM pruebas WHERE id=$1', [id]);
     res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// PATCH /api/pruebas/:id/editar — editar título, descripción, emoji
+app.patch('/api/pruebas/:id/editar', async (req, res) => {
+  try {
+    const { clave, titulo, descripcion, emoji } = req.body;
+    if (clave !== (process.env.RESET_KEY || 'lapuri')) return res.status(403).json({ error: 'Sin permiso' });
+    const id = parseInt(req.params.id);
+    const sets = [];
+    const vals = [];
+    let idx = 1;
+    if (titulo     !== undefined) { sets.push('titulo=$'+idx++);      vals.push(titulo); }
+    if (descripcion!== undefined) { sets.push('descripcion=$'+idx++); vals.push(descripcion); }
+    if (emoji      !== undefined) { sets.push('emoji=$'+idx++);       vals.push(emoji); }
+    if (!sets.length) return res.status(400).json({ error: 'Nada que actualizar' });
+    vals.push(id);
+    await pool.query('UPDATE pruebas SET '+sets.join(',')+' WHERE id=$'+idx, vals);
+    const { rows } = await pool.query('SELECT * FROM pruebas WHERE id=$1', [id]);
+    res.json({ ok: true, prueba: rows[0] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PATCH /api/pruebas/:id/mover — mover a posición exacta (orden numérico)
+app.patch('/api/pruebas/:id/mover', async (req, res) => {
+  try {
+    const { clave, nuevaPosicion } = req.body;
+    if (clave !== (process.env.RESET_KEY || 'lapuri')) return res.status(403).json({ error: 'Sin permiso' });
+    const id = parseInt(req.params.id);
+    const pos = parseInt(nuevaPosicion);
+    if (!pos || pos < 1) return res.status(400).json({ error: 'Posición inválida' });
+
+    // Obtener todas las pruebas no extraídas ordenadas
+    const { rows: all } = await pool.query('SELECT * FROM pruebas ORDER BY orden ASC');
+    const noExtraidas = all.filter(p => !p.extraida);
+    const extraidas   = all.filter(p =>  p.extraida);
+
+    // Encontrar la prueba a mover
+    const idx = noExtraidas.findIndex(p => p.id === id);
+    if (idx === -1) return res.status(400).json({ error: 'Prueba no encontrada o ya extraída' });
+
+    // Eliminarla y reinsertarla en la nueva posición (1-based entre no extraídas)
+    const [item] = noExtraidas.splice(idx, 1);
+    const insertAt = Math.min(Math.max(pos - 1, 0), noExtraidas.length);
+    noExtraidas.splice(insertAt, 0, item);
+
+    // Reasignar órdenes: extraídas mantienen su orden, no extraídas se reordenan desde max(extraidas)+1
+    const baseOrden = extraidas.length > 0 ? Math.max(...extraidas.map(p => p.orden)) + 1 : 1;
+    // Mejor: asignar órdenes globalmente manteniendo extraídas fijas
+    // Reordenar solo las no extraídas en huecos libres
+    let ordenCounter = 1;
+    const client = await pool.connect();
+    try {
+      // Mezclar: ir asignando orden a todo en el orden correcto
+      // Extraídas ya tienen su orden fijo, solo actualizamos no extraídas
+      for (let i = 0; i < noExtraidas.length; i++) {
+        // Buscar el siguiente orden libre (no ocupado por extraídas)
+        let oVal = i + 1;
+        // Asignamos secuencialmente dentro de no extraídas
+        await client.query('UPDATE pruebas SET orden=$1 WHERE id=$2', [1000 + i, noExtraidas[i].id]);
+      }
+      // Ahora asignar órdenes reales evitando colisiones con extraídas
+      const extraidasOrdenes = new Set(extraidas.map(p => p.orden));
+      let seq = 1;
+      for (let i = 0; i < noExtraidas.length; i++) {
+        while (extraidasOrdenes.has(seq)) seq++;
+        await client.query('UPDATE pruebas SET orden=$1 WHERE id=$2', [seq, noExtraidas[i].id]);
+        seq++;
+      }
+    } finally {
+      client.release();
+    }
+
+    const { rows } = await pool.query('SELECT * FROM pruebas ORDER BY orden ASC');
+    res.json({ ok: true, pruebas: rows });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
