@@ -1219,6 +1219,9 @@ function openWildcardBall(ballEl, prueba){
 }
 
 function addWildcardToChute(){
+  const box=document.getElementById('chute-container');
+  const ball=document.createElement('div');
+  ball.className='chute-ball wildcard';
   ball.innerHTML='🃏';
   ball.title='Comodín — toca para ver la carta';
   ball.addEventListener('click',()=>{
