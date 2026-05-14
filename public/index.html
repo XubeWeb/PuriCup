@@ -1194,9 +1194,74 @@ function addWildcardToChute(){
   const ball=document.createElement('div');
   ball.className='chute-ball wildcard';
   ball.innerHTML='🃏';
-  ball.title='Comodín — úsalo al completar una prueba';
-  ball.addEventListener('click',()=>toast('🃏 Usa el comodín al marcar una prueba como completada'));
+  ball.title='Comodín — toca para ver la carta';
+  ball.addEventListener('click',()=>{
+    if(ball.dataset.opened) return;
+    ball.dataset.opened='1';
+    openWildcardCard(ball);
+  });
   box.appendChild(ball);
+}
+
+function openWildcardCard(ballEl){
+  const overlay=document.getElementById('card-overlay');
+  const burst=document.getElementById('ball-burst');
+  const waiting=document.getElementById('waiting-msg');
+  const scene=document.getElementById('card-scene');
+  const hint=document.getElementById('flip-hint');
+  const closeBtn=document.getElementById('card-close');
+  const card3d=document.getElementById('card-3d');
+
+  burst.style.background='radial-gradient(circle at 35% 35%,#ffe680,#ffaa00)';
+  burst.textContent='🃏';
+  burst.style.display='flex';
+  waiting.style.display='block';
+  scene.style.display='none';
+  hint.style.display='none';
+  closeBtn.classList.remove('show');
+  card3d.classList.remove('flipped');
+  overlay.classList.add('show');
+
+  setTimeout(()=>{burst.style.display='none';},550);
+  setTimeout(()=>{
+    waiting.style.display='none';
+    // Cara reverso (front — sin girar)
+    const front=document.getElementById('cf-front');
+    front.innerHTML='';
+    front.className='card-face';
+    if(BACK_IMAGE_URL){
+      front.classList.add('has-back-img');
+      front.style.border='2px solid #ffcc00';
+      front.style.boxShadow='0 0 18px rgba(255,204,0,.5),0 0 40px rgba(255,204,0,.2)';
+      const img=document.createElement('img');img.src=BACK_IMAGE_URL;img.alt='Reverso';
+      front.appendChild(img);
+    } else {
+      front.style.background='linear-gradient(145deg,#1a1000,#3a2800)';
+      front.style.border='2px solid rgba(255,204,0,.4)';
+      const icon=document.createElement('div');icon.className='card-back-icon';icon.textContent='🃏';
+      front.appendChild(icon);
+    }
+    // Cara comodín (back — al girar)
+    const back=document.getElementById('cf-back');
+    back.innerHTML='';
+    back.className='card-face card-back-face';
+    back.style.background='linear-gradient(145deg,#1a1000,#4a2800)';
+    back.style.border='2px solid rgba(255,204,0,.5)';
+    back.style.boxShadow='0 0 30px rgba(255,204,0,.3)';
+    const tag=document.createElement('div');tag.className='cat-tag-big';
+    tag.style.cssText='background:rgba(255,204,0,.15);color:#ffcc00;border:1px solid rgba(255,204,0,.3)';
+    tag.textContent='COMODÍN';
+    const emo=document.createElement('div');emo.className='card-emoji-big';emo.textContent='🃏';
+    const title=document.createElement('div');title.className='card-title';title.style.color='#ffcc00';title.textContent='¡COMODÍN!';
+    const desc=document.createElement('div');desc.className='card-desc';
+    desc.textContent='Puedes usar este comodín al completar una prueba para pedir ayuda. La ruleta decidirá quién te echa una mano.';
+    back.appendChild(tag);back.appendChild(emo);back.appendChild(title);back.appendChild(desc);
+    card3d.classList.remove('flipped');
+    scene.style.display='block';
+    hint.style.display='block';
+    hint.textContent='Toca la carta para ver el comodín →';
+    closeBtn.classList.add('show');
+  },2200);
 }
 
 function lighten(hex){
@@ -1743,7 +1808,7 @@ function renderAdminPanel(){
     remaining.forEach((p,i)=>{
       const o=document.createElement('option');
       o.value=p.id; // insertar ANTES de esta prueba
-      o.textContent='Antes de: '+p.emoji+' '+p.titulo;
+      o.textContent='Pos '+(i+1)+' — antes de: '+p.emoji+' '+p.titulo;
       posSel.appendChild(o);
     });
   }
@@ -1832,7 +1897,7 @@ function buildDragDOM(list){
       +cicon+'</span></div>'
       +'<div class="drag-desc" style="font-size:7px;color:rgba(150,160,200,.7);margin-top:1px">'+p.descripcion+'</div>';
 
-    // Selector de categoría (solo si no extraída)
+    // Selector de categoría + botón editar (solo si no extraída)
     if(!p.extraida){
       const catSel=document.createElement('select');
       catSel.style.cssText='background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:2px 4px;font-size:9px;font-family:var(--fb);margin-top:3px;width:100%';
@@ -1848,6 +1913,41 @@ function buildDragDOM(list){
         await adminCambiarCategoria(p.id, e.target.value);
       };
       info.appendChild(catSel);
+
+      // Fila editar + mover a posición
+      const editRow=document.createElement('div');
+      editRow.style.cssText='display:flex;gap:4px;margin-top:4px;align-items:center';
+
+      const editBtn=document.createElement('button');
+      editBtn.textContent='✏️ Editar';
+      editBtn.style.cssText='background:rgba(0,224,255,.08);border:1px solid rgba(0,224,255,.2);color:var(--neon2);border-radius:6px;padding:2px 7px;font-size:9px;cursor:pointer;white-space:nowrap';
+      editBtn.onclick=(e)=>{e.stopPropagation();openEditForm(p,div);};
+
+      const moverLabel=document.createElement('span');
+      moverLabel.style.cssText='font-size:9px;color:var(--txt2);white-space:nowrap';
+      moverLabel.textContent='→ pos:';
+
+      const moverInput=document.createElement('input');
+      moverInput.type='number';moverInput.min='1';moverInput.placeholder='#';
+      moverInput.style.cssText='width:38px;background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:2px 4px;font-size:9px;font-family:var(--fb)';
+      moverInput.onclick=(e)=>e.stopPropagation();
+
+      const moverBtn=document.createElement('button');
+      moverBtn.textContent='↕';
+      moverBtn.title='Mover a esta posición';
+      moverBtn.style.cssText='background:rgba(255,204,0,.08);border:1px solid rgba(255,204,0,.2);color:var(--gold);border-radius:6px;padding:2px 7px;font-size:9px;cursor:pointer';
+      moverBtn.onclick=async(e)=>{
+        e.stopPropagation();
+        const pos=parseInt(moverInput.value);
+        if(!pos||pos<1){toast('Escribe un número de posición');return;}
+        await adminMoverPrueba(p.id, pos);
+      };
+
+      editRow.appendChild(editBtn);
+      editRow.appendChild(moverLabel);
+      editRow.appendChild(moverInput);
+      editRow.appendChild(moverBtn);
+      info.appendChild(editRow);
     }
 
     // Botones ▲▼ al lado
@@ -1974,6 +2074,85 @@ async function adminAnadirPrueba(){
     updateStats();renderPanel();renderDragList();
     renderAdminPanel();
     toast('✅ Prueba añadida');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+
+function openEditForm(p, containerDiv){
+  // Si ya hay un form abierto en este item, cerrarlo
+  const existing=containerDiv.querySelector('.edit-form-inline');
+  if(existing){existing.remove();return;}
+
+  const form=document.createElement('div');
+  form.className='edit-form-inline';
+  form.style.cssText='background:rgba(0,0,20,.7);border:1px solid rgba(0,224,255,.25);border-radius:8px;padding:8px;margin-top:6px;display:flex;flex-direction:column;gap:5px';
+  form.onclick=(e)=>e.stopPropagation();
+
+  const row1=document.createElement('div');
+  row1.style.cssText='display:flex;gap:5px;align-items:center';
+  const emojiI=document.createElement('input');
+  emojiI.type='text';emojiI.value=p.emoji||'🎯';emojiI.maxLength=4;
+  emojiI.style.cssText='width:36px;background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:4px;font-size:14px;text-align:center;font-family:var(--fb)';
+  const titleI=document.createElement('input');
+  titleI.type='text';titleI.value=p.titulo;titleI.maxLength=80;
+  titleI.style.cssText='flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:4px 7px;font-size:10px;font-family:var(--fb)';
+  row1.appendChild(emojiI);row1.appendChild(titleI);
+
+  const descTA=document.createElement('textarea');
+  descTA.value=p.descripcion;descTA.rows=2;
+  descTA.style.cssText='width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:4px 7px;font-size:9px;font-family:var(--fb);resize:vertical;box-sizing:border-box';
+
+  const btnRow=document.createElement('div');
+  btnRow.style.cssText='display:flex;gap:5px';
+  const saveBtn=document.createElement('button');
+  saveBtn.textContent='💾 Guardar';
+  saveBtn.style.cssText='flex:1;background:rgba(0,224,255,.12);border:1px solid rgba(0,224,255,.25);color:var(--neon2);border-radius:6px;padding:4px;font-size:10px;cursor:pointer';
+  saveBtn.onclick=async()=>{
+    const nuevoTitulo=titleI.value.trim();
+    const nuevaDesc=descTA.value.trim();
+    const nuevoEmoji=emojiI.value.trim()||'🎯';
+    if(!nuevoTitulo){toast('El título no puede estar vacío');return;}
+    await adminEditarPrueba(p.id, nuevoTitulo, nuevaDesc, nuevoEmoji);
+    form.remove();
+  };
+  const cancelBtn=document.createElement('button');
+  cancelBtn.textContent='✕';
+  cancelBtn.style.cssText='background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.15);color:var(--txt2);border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer';
+  cancelBtn.onclick=()=>form.remove();
+  btnRow.appendChild(saveBtn);btnRow.appendChild(cancelBtn);
+
+  form.appendChild(row1);form.appendChild(descTA);form.appendChild(btnRow);
+  containerDiv.appendChild(form);
+  titleI.focus();
+}
+
+async function adminEditarPrueba(id, titulo, descripcion, emoji){
+  try{
+    const res=await fetch('/api/pruebas/'+id+'/editar',{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clave:'LAPURI',titulo,descripcion,emoji})
+    });
+    if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
+    const data=await res.json();
+    // Actualizar local
+    const p=allPruebas.find(x=>x.id===id);
+    if(p){p.titulo=titulo;p.descripcion=descripcion;p.emoji=emoji;}
+    renderPanel();renderDragList();
+    toast('✅ Prueba actualizada');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+async function adminMoverPrueba(id, nuevaPosicion){
+  try{
+    const res=await fetch('/api/pruebas/'+id+'/mover',{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clave:'LAPURI',nuevaPosicion})
+    });
+    if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
+    await loadPruebas();
+    makeBalls();settle(60);
+    renderPanel();renderDragList();
+    toast('✅ Prueba movida a posición '+nuevaPosicion);
   }catch(e){toast('Error: '+e.message);}
 }
 
