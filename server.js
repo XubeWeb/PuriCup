@@ -74,17 +74,21 @@ async function initDB() {
     await client.query('ALTER TABLE pruebas ADD COLUMN IF NOT EXISTS uso_comodin BOOLEAN NOT NULL DEFAULT false');
     await client.query("ALTER TABLE pruebas ADD COLUMN IF NOT EXISTS comodin_quien TEXT NOT NULL DEFAULT ''");
 
-    // Upsert: insertar o actualizar título/descripción/emoji/orden/categoría
-    // así los cambios en PRUEBAS_SEED se aplican sin borrar el progreso (extraida/completada)
-    for (const p of PRUEBAS_SEED) {
-      await client.query(`
-        INSERT INTO pruebas (id,orden,categoria,titulo,descripcion,emoji)
-        VALUES ($1,$2,$3,$4,$5,$6)
-        ON CONFLICT (id) DO UPDATE SET
-          orden=$2, categoria=$3, titulo=$4, descripcion=$5, emoji=$6
-      `, [p.id, p.orden, p.categoria, p.titulo, p.descripcion, p.emoji]);
+    // Solo insertar el seed si la tabla está completamente vacía.
+    // Si ya hay datos en Supabase, no tocar nada.
+    const { rows: existing } = await client.query('SELECT COUNT(*) as n FROM pruebas');
+    if (parseInt(existing[0].n) === 0) {
+      for (const p of PRUEBAS_SEED) {
+        await client.query(`
+          INSERT INTO pruebas (id,orden,categoria,titulo,descripcion,emoji)
+          VALUES ($1,$2,$3,$4,$5,$6)
+          ON CONFLICT (id) DO NOTHING
+        `, [p.id, p.orden, p.categoria, p.titulo, p.descripcion, p.emoji]);
+      }
+      console.log('Pruebas iniciales insertadas: ' + PRUEBAS_SEED.length);
+    } else {
+      console.log('Pruebas existentes en BD: ' + existing[0].n + ' — seed ignorado');
     }
-    console.log('Pruebas sincronizadas: ' + PRUEBAS_SEED.length);
   } finally {
     client.release();
   }
