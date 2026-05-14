@@ -653,9 +653,6 @@ const BACK_IMAGE_URL = 'https://i.imgur.com/lXIKum7.png';
 const ASISTENTES = ['Rafa','Alberto','Dani','Kim','Ansano','Javi','Jossan','Ramon','Nadie 😢'];
 // 'Nadie' aparece en negro cuando sale — edita la lista como quieras
 
-// Bolas en las que sale un comodín (basado en el número de bola extraída, no el ID)
-const WILDCARD_BALLS = [5, 15, 20];
-
 // Milestones por categoría
 const MILESTONES = {
   continuas_done: { emoji:'🎊', title:'¡CONTINUAS DESBLOQUEADAS!', text:'¡Enhorabuena! Has desbloqueado todas las pruebas continuas. El grupo está impresionado. Pero esto no ha hecho más que empezar…' },
@@ -1150,15 +1147,6 @@ async function doExtractAndAdd(ballColor, pruebaId){
   try {
     ballsExtracted++;
     saveBallsExtracted();
-
-    // ¿comodín por número de bola?
-    if(WILDCARD_BALLS.includes(ballsExtracted)){
-      wildcards++;
-      updateStats();
-      addWildcardToChute();
-      toast('🃏 ¡Comodín desbloqueado! Ya tienes '+wildcards);
-      saveWildcards();
-    }
 
     const prueba = await doExtract();
     if(!prueba){ toast('¡Todas las pruebas han salido!'); updateStats(); return; }
