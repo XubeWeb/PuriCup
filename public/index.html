@@ -452,14 +452,7 @@ canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;wi
     </div>
     <div class="cards-grid" id="grid-sorpresa"><div class="empty-msg">Sin sorpresas activadas aún</div></div>
   </div>
-  <div class="cat-block" id="cat-comodin-block" style="display:none">
-    <div class="cat-header">
-      <div class="cat-pill" style="background:rgba(255,204,0,.15);color:var(--gold);border:1px solid rgba(255,204,0,.3)">COMODÍN</div>
-      <div class="cat-name" style="color:var(--gold)">Comodines <span style="font-family:var(--fb);font-size:11px;font-weight:400;color:rgba(255,204,0,.5);letter-spacing:0">(no cuentan para el cómputo final)</span></div>
-      <div class="cat-stats" id="stats-comodin">—</div>
-    </div>
-    <div class="cards-grid" id="grid-comodin"><div class="empty-msg">Sin comodines extraídos aún</div></div>
-  </div>
+
 </div>
 </div>
 
@@ -1196,14 +1189,12 @@ function addBallToChute(prueba, color){
 }
 
 function openWildcardBall(ballEl, prueba){
-  // Cuando la bola de Supabase es categoría comodín, la tratamos como comodín:
-  // sumamos al contador de wildcards y abrimos la carta comodín
   ballEl.dataset.opened='1';
   wildcards++;
   updateStats();
   saveWildcards();
   toast('🃏 ¡Comodín desbloqueado! Ya tienes '+wildcards);
-  openWildcardCard(ballEl);
+  openWildcardCard(ballEl, prueba);
 }
 
 function addWildcardToChute(){
@@ -1220,7 +1211,7 @@ function addWildcardToChute(){
   box.appendChild(ball);
 }
 
-function openWildcardCard(ballEl){
+function openWildcardCard(ballEl, prueba){
   const overlay=document.getElementById('card-overlay');
   const burst=document.getElementById('ball-burst');
   const waiting=document.getElementById('waiting-msg');
@@ -1258,7 +1249,7 @@ function openWildcardCard(ballEl){
       const icon=document.createElement('div');icon.className='card-back-icon';icon.textContent='🃏';
       front.appendChild(icon);
     }
-    // Cara comodín (back — al girar)
+    // Cara comodín (back — al girar) — datos reales de Supabase
     const back=document.getElementById('cf-back');
     back.innerHTML='';
     back.className='card-face card-back-face';
@@ -1268,10 +1259,13 @@ function openWildcardCard(ballEl){
     const tag=document.createElement('div');tag.className='cat-tag-big';
     tag.style.cssText='background:rgba(255,204,0,.15);color:#ffcc00;border:1px solid rgba(255,204,0,.3)';
     tag.textContent='COMODÍN';
-    const emo=document.createElement('div');emo.className='card-emoji-big';emo.textContent='🃏';
-    const title=document.createElement('div');title.className='card-title';title.style.color='#ffcc00';title.textContent='¡COMODÍN!';
+    const pruebaDat=prueba?(allPruebas.find(p=>p.id===prueba.id)||prueba):null;
+    const emo=document.createElement('div');emo.className='card-emoji-big';
+    emo.textContent=pruebaDat?.emoji||'🃏';
+    const title=document.createElement('div');title.className='card-title';title.style.color='#ffcc00';
+    title.textContent=pruebaDat?.titulo||'¡COMODÍN!';
     const desc=document.createElement('div');desc.className='card-desc';
-    desc.textContent='Puedes usar este comodín al completar una prueba para pedir ayuda. La ruleta decidirá quién te echa una mano.';
+    desc.textContent=pruebaDat?.descripcion||'Puedes usar este comodín al completar una prueba para pedir ayuda.';
     back.appendChild(tag);back.appendChild(emo);back.appendChild(title);back.appendChild(desc);
     card3d.classList.remove('flipped');
     scene.style.display='block';
@@ -1378,10 +1372,7 @@ function renderPanel(){
   // Mostrar bloque sorpresa solo si hay alguna extraída
   const sorpresaBlock=document.getElementById('cat-sorpresa-block');
   if(sorpresaBlock) sorpresaBlock.style.display=allPruebas.some(p=>p.categoria==='sorpresa'&&p.extraida)?'block':'none';
-  // Mostrar bloque comodin solo si hay alguna extraída
-  const comodinBlock=document.getElementById('cat-comodin-block');
-  if(comodinBlock) comodinBlock.style.display=allPruebas.some(p=>p.categoria==='comodin'&&p.extraida)?'block':'none';
-  ['continuas','dia1','dia2','sorpresa','comodin'].forEach(cat=>{
+  ['continuas','dia1','dia2','sorpresa'].forEach(cat=>{
     const extracted=allPruebas.filter(p=>p.categoria===cat&&p.extraida);
     const done=extracted.filter(p=>p.completada).length;
     document.getElementById('stats-'+cat).textContent=
