@@ -1,0 +1,2404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PURICUP 🏆</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#05050f;--panel:#0c0c20;--border:rgba(100,100,220,.18);
+  --neon:#ff1f6e;--neon2:#00e0ff;--gold:#ffcc00;
+  --cat-c:#ff1f6e;--cat-1:#00e0ff;--cat-2:#ffcc00;
+  --txt:#e0e6ff;--txt2:#5566aa;--txt3:#8899cc;--green:#22dd88;
+  --fh:'Bebas Neue',sans-serif;--fb:'Syne',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{min-height:100dvh;background:var(--bg);color:var(--txt);font-family:var(--fb);
+  display:flex;flex-direction:column;align-items:center;padding:16px 12px 60px;gap:16px;overflow-x:hidden}
+
+/* LOCK OVERLAY */
+#lock-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.0);pointer-events:none}
+body.locked #lock-overlay{pointer-events:all;cursor:not-allowed}
+body.locked #lock-overlay::after{
+  content:'🔒 Introduce la contraseña para interactuar';
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:rgba(10,10,30,.95);border:1px solid var(--neon);
+  padding:10px 20px;border-radius:100px;font-size:12px;color:var(--txt);
+  white-space:nowrap;pointer-events:none;
+}
+/* Botón unlock siempre visible aunque esté locked */
+#unlock-bar{position:fixed;bottom:0;left:0;right:0;z-index:9001;
+  display:flex;justify-content:center;padding:8px;
+  background:linear-gradient(to top,rgba(5,5,15,0.95),transparent)}
+#unlock-btn{background:rgba(12,12,32,.9);border:1px solid rgba(100,100,200,.3);
+  color:var(--txt2);font-size:10px;letter-spacing:1px;padding:6px 16px;
+  border-radius:100px;cursor:pointer;font-family:var(--fb);transition:all .2s}
+#unlock-btn:hover{border-color:var(--neon);color:var(--neon)}
+
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity:.03;mix-blend-mode:overlay}
+
+header{text-align:center;z-index:1}
+header h1{font-family:var(--fh);font-size:clamp(32px,9vw,62px);letter-spacing:5px;
+  color:var(--gold);text-shadow:0 0 30px rgba(255,204,0,.5),0 0 80px rgba(255,204,0,.2);line-height:1}
+
+#stats{display:flex;gap:0;background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;z-index:1}
+.stat{text-align:center;padding:8px 10px;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat-n{font-family:var(--fh);font-size:22px;line-height:1;letter-spacing:.5px}
+.stat-n.active{color:var(--neon2)}.stat-n.done{color:var(--green)}.stat-n.rem{color:var(--txt3)}
+.stat-l{font-size:8px;letter-spacing:.5px;color:var(--txt2);text-transform:uppercase;margin-top:1px}
+
+/* ── OVERLAY FIN PURICUP ── */
+#fin-overlay{
+  position:absolute;inset:0;
+  border-radius:14px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:14px;
+  background:radial-gradient(ellipse at 50% 40%,rgba(10,0,30,.92) 0%,rgba(0,0,10,.97) 100%);
+  z-index:50;
+  padding:24px;
+  text-align:center;
+  animation:finFadeIn 1.2s ease both;
+}
+@keyframes finFadeIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+
+#fin-trofeo{font-size:64px;filter:drop-shadow(0 0 18px rgba(255,200,0,.6));animation:trofeoPulse 2.5s ease-in-out infinite}
+@keyframes trofeoPulse{0%,100%{transform:scale(1) rotate(-3deg)}50%{transform:scale(1.08) rotate(3deg)}}
+
+#fin-titulo{
+  font-family:var(--fb);font-size:20px;font-weight:900;letter-spacing:2px;
+  color:#fff;text-transform:uppercase;
+  text-shadow:0 0 20px rgba(255,200,0,.5),0 0 40px rgba(255,200,0,.2);
+}
+#fin-sub{
+  font-size:12px;letter-spacing:1px;color:rgba(255,255,255,.6);
+  line-height:1.6;max-width:260px;
+}
+#fin-link{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:6px;
+  padding:12px 22px;
+  background:linear-gradient(135deg,rgba(255,180,0,.15),rgba(255,100,0,.1));
+  border:1px solid rgba(255,180,0,.4);
+  border-radius:40px;
+  color:#ffcc00;
+  font-family:var(--fb);font-size:12px;letter-spacing:1.5px;font-weight:700;
+  text-decoration:none;text-transform:uppercase;
+  transition:all .25s;
+  box-shadow:0 0 20px rgba(255,180,0,.1);
+}
+#fin-link:hover{
+  background:linear-gradient(135deg,rgba(255,180,0,.28),rgba(255,100,0,.2));
+  box-shadow:0 0 30px rgba(255,180,0,.3);
+  transform:translateY(-2px);
+}
+#fin-link svg{width:16px;height:16px;fill:#ffcc00;flex-shrink:0}
+#fin-estrellas{font-size:18px;letter-spacing:6px;opacity:.5}
+
+/* comodines stat */
+.stat-n.wild{color:var(--gold)}
+
+#game-area{display:flex;align-items:flex-end;gap:10px;width:min(540px,100%);z-index:1}
+#machine-wrap{flex:1;position:relative;min-width:0}
+canvas#c{display:block;width:100%;height:auto;border-radius:14px;
+  border:1.5px solid #1a1a50;box-shadow:0 0 50px rgba(80,80,255,.1);touch-action:none}
+
+#chute-box{width:80px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+#chute-label{font-size:8px;letter-spacing:2px;color:var(--txt2);text-transform:uppercase;text-align:center}
+#chute-container{width:80px;min-height:80px;background:var(--panel);
+  border:1.5px solid var(--border);border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 6px 10px;
+  position:relative;overflow:hidden}
+#chute-container::before{content:'CAJA';position:absolute;top:6px;left:50%;
+  transform:translateX(-50%);font-size:7px;letter-spacing:2px;color:var(--txt2)}
+
+.chute-ball{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:22px;cursor:pointer;position:relative;flex-shrink:0;
+  animation:dropIn .5s cubic-bezier(.34,1.56,.64,1) both;transition:transform .15s;
+  border:2px solid rgba(255,255,255,.15);
+  box-shadow:0 4px 16px rgba(0,0,0,.4),inset 0 -3px 8px rgba(0,0,0,.3),inset 0 3px 8px rgba(255,255,255,.15)}
+.chute-ball:hover{transform:scale(1.08)}
+.chute-ball:active{transform:scale(.95)}
+/* comodín en caja */
+.chute-ball.wildcard{background:radial-gradient(circle at 35% 35%,#ffe680,#ffaa00)!important;
+  box-shadow:0 0 20px rgba(255,204,0,.5),inset 0 -3px 8px rgba(0,0,0,.3)!important;
+  font-size:26px}
+@keyframes dropIn{from{transform:translateY(-60px) scale(.6);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+
+#controls{display:flex;flex-direction:column;align-items:center;gap:10px;z-index:1}
+#dpad{display:grid;grid-template-columns:56px 56px 56px;grid-template-rows:56px;gap:6px}
+.btn{width:56px;height:56px;border-radius:12px;border:1.5px solid rgba(100,100,200,.3);
+  background:rgba(12,12,32,.95);color:var(--txt);font-size:22px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;user-select:none;
+  -webkit-tap-highlight-color:transparent;transition:background .1s,transform .08s,box-shadow .1s;touch-action:manipulation}
+.btn:active,.btn.active{background:rgba(0,224,255,.1);transform:scale(.9);box-shadow:0 0 16px rgba(0,224,255,.25)}
+.btn.drop{background:linear-gradient(135deg,#1a0035,#38006a);border-color:var(--neon);
+  color:var(--neon);font-family:var(--fh);font-size:14px;letter-spacing:1px;
+  box-shadow:0 0 24px rgba(255,31,110,.2)}
+.btn.drop:active{box-shadow:0 0 36px rgba(255,31,110,.5)}
+#hint{font-size:10px;color:var(--txt2);letter-spacing:.5px;text-align:center}
+
+/* PANEL */
+#panel{width:min(700px,100%);display:flex;flex-direction:column;gap:20px;z-index:1}
+.cat-block{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.cat-header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.cat-pill{font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;
+  border-radius:100px;font-family:var(--fh);font-size:11px}
+.cat-name{font-family:var(--fh);font-size:22px;letter-spacing:1px;flex:1}
+.cat-stats{font-size:10px;color:var(--txt2);letter-spacing:1px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:14px}
+.empty-msg{padding:20px;text-align:center;font-size:13px;color:var(--txt2);font-style:italic}
+
+/* CARD THUMB */
+.card-thumb{border-radius:10px;border:1.5px solid var(--border);background:rgba(255,255,255,.03);
+  overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s;position:relative}
+.card-thumb:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.card-thumb.completada{border-color:rgba(34,221,136,.4)}
+.thumb-body{padding:14px 12px 10px;display:flex;flex-direction:column;align-items:center;
+  gap:6px;text-align:center;cursor:pointer;flex:1}
+.thumb-emoji{font-size:28px;line-height:1}
+.thumb-cat-tag{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:2px 8px;border-radius:100px}
+.thumb-title{font-size:11px;font-weight:600;color:var(--txt);line-height:1.3}
+.thumb-desc{font-size:9px;color:var(--txt2);line-height:1.4;display:-webkit-box;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.thumb-order{position:absolute;top:6px;right:6px;font-size:8px;color:var(--txt2);
+  font-family:var(--fh);letter-spacing:.5px}
+
+/* thumb actions row */
+.thumb-actions{display:flex;border-top:1px solid rgba(100,100,200,.1)}
+.contador-row{display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:6px 10px;border-top:1px solid rgba(100,100,200,.08);background:rgba(0,0,0,.15)}
+.contador-row button{background:rgba(255,255,255,.08);border:1px solid rgba(100,100,200,.2);
+  color:var(--txt);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .1s}
+.contador-row button:hover{background:rgba(255,255,255,.15)}
+.contador-display{font-family:var(--fh);font-size:16px;color:var(--neon2);letter-spacing:1px;min-width:60px;text-align:center}
+.contador-total{font-size:10px;color:var(--txt2);text-align:center}
+.status-btn,.remove-btn{flex:1;padding:8px 4px;font-size:10px;font-weight:600;
+  letter-spacing:.8px;text-transform:uppercase;border:none;cursor:pointer;
+  transition:background .15s,color .15s;display:flex;align-items:center;justify-content:center;gap:4px}
+.card-thumb:not(.completada) .status-btn{background:rgba(255,255,255,.04);color:var(--txt2)}
+.card-thumb:not(.completada) .status-btn:hover{background:rgba(34,221,136,.1);color:var(--green)}
+.card-thumb.completada .status-btn{background:rgba(34,221,136,.1);color:var(--green)}
+.card-thumb.completada .status-btn:hover{background:rgba(255,31,110,.08);color:var(--neon)}
+.remove-btn{background:rgba(255,255,255,.02);color:rgba(255,80,80,.4);border-left:1px solid rgba(100,100,200,.1);max-width:36px}
+.remove-btn:hover{background:rgba(255,50,50,.12);color:#ff5050}
+
+/* CARD MODAL */
+#card-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,6,.92);
+  align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(12px);flex-direction:column;gap:0}
+#card-overlay.show{display:flex}
+#ball-burst{position:absolute;width:90px;height:90px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:36px;display:none;
+  animation:burstGrow .5s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes burstGrow{0%{transform:scale(1);opacity:1}60%{transform:scale(2.2);opacity:.6}100%{transform:scale(3.5);opacity:0}}
+#waiting-msg{font-family:var(--fh);font-size:36px;letter-spacing:4px;color:#fff;
+  text-align:center;animation:pulse 1s ease-in-out infinite;display:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.card-scene{perspective:1200px;width:min(280px,80vw);display:none;cursor:pointer}
+.card-3d{width:100%;aspect-ratio:2.5/3.5;position:relative;transform-style:preserve-3d;
+  transition:transform .75s cubic-bezier(.4,0,.2,1)}
+.card-3d.flipped{transform:rotateY(180deg)}
+.card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:18px;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 20px;gap:10px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.8)}
+.card-back-face{transform:rotateY(180deg)}
+.card-face .cat-tag-big{font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  padding:4px 14px;border-radius:100px;font-family:var(--fh);font-size:12px}
+.card-face .card-emoji-big{font-size:72px;line-height:1}
+.card-face .card-title{font-family:var(--fh);font-size:30px;letter-spacing:2px;color:#fff;line-height:1.1}
+.card-face .card-desc{font-size:13px;color:rgba(255,255,255,.75);line-height:1.6}
+.card-face .card-back-icon{font-size:56px;opacity:.6}
+.card-face .card-back-label{font-family:var(--fh);font-size:22px;letter-spacing:3px;color:rgba(255,255,255,.5)}
+/* back image */
+.card-face.has-back-img{padding:0}
+.card-face.has-back-img img{width:100%;height:100%;object-fit:cover;border-radius:18px}
+.flip-hint{font-size:11px;color:var(--txt2);letter-spacing:1px;margin-top:14px;display:none;text-align:center}
+#card-close{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#fff;
+  font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;transition:background .2s}
+#card-close:hover{background:rgba(255,255,255,.18)}
+#card-close.show{display:flex}
+
+/* MILESTONE MODAL */
+#milestone-overlay{display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,10,.92);align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px)}
+#milestone-overlay.show{display:flex}
+#milestone-box{background:#0e0e2a;border:2px solid var(--gold);border-radius:20px;
+  padding:40px 36px;text-align:center;max-width:340px;
+  box-shadow:0 0 60px rgba(255,204,0,.25),0 0 120px rgba(255,204,0,.1)}
+#milestone-box .m-emoji{font-size:64px;margin-bottom:12px}
+#milestone-box h2{font-family:var(--fh);font-size:34px;letter-spacing:3px;color:var(--gold);margin-bottom:8px}
+#milestone-box p{font-size:14px;color:var(--txt3);line-height:1.6;margin-bottom:24px}
+#milestone-box button{background:var(--gold);border:none;color:#000;font-family:var(--fh);
+  font-size:18px;letter-spacing:1px;padding:12px 32px;border-radius:100px;cursor:pointer;transition:transform .1s}
+#milestone-box button:hover{transform:scale(1.04)}
+
+/* WELCOME MODAL */
+#welcome-overlay{display:none;position:fixed;inset:0;z-index:9500;
+  background:rgba(0,0,10,.95);align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(8px)}
+#welcome-overlay.show{display:flex}
+#welcome-box{background:#0d0d25;border:2px solid var(--gold);border-radius:22px;
+  padding:40px 32px;text-align:center;max-width:380px;
+  box-shadow:0 0 80px rgba(255,204,0,.2)}
+#welcome-box .w-trophy{font-size:72px;margin-bottom:8px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+#welcome-box h2{font-family:var(--fh);font-size:36px;letter-spacing:3px;color:var(--gold);margin-bottom:16px}
+/* ── CAMBIA ESTE TEXTO ── */
+#welcome-box p{font-size:14px;color:var(--txt3);line-height:1.8;margin-bottom:28px}
+#welcome-box button{background:linear-gradient(135deg,var(--neon),#cc0055);border:none;color:#fff;
+  font-family:var(--fh);font-size:22px;letter-spacing:2px;padding:14px 48px;
+  border-radius:100px;cursor:pointer;box-shadow:0 0 30px rgba(255,31,110,.4);transition:transform .1s,box-shadow .1s}
+#welcome-box button:hover{transform:scale(1.05);box-shadow:0 0 50px rgba(255,31,110,.6)}
+
+/* CONFETTI & TROPHY WIN */
+#win-overlay{display:none;position:fixed;inset:0;z-index:400;pointer-events:none}
+#win-overlay.show{display:block}
+#win-trophy{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:120px;animation:trophyPop 1s cubic-bezier(.34,1.56,.64,1) both;z-index:401;pointer-events:none}
+@keyframes trophyPop{from{transform:translate(-50%,-50%) scale(0) rotate(-20deg);opacity:0}
+  to{transform:translate(-50%,-50%) scale(1) rotate(0);opacity:1}}
+#win-close{position:fixed;top:50%;left:50%;transform:translate(-50%,80px);
+  background:var(--gold);border:none;color:#000;font-family:var(--fh);font-size:20px;
+  letter-spacing:2px;padding:12px 36px;border-radius:100px;cursor:pointer;z-index:401;
+  animation:trophyPop 1s .5s cubic-bezier(.34,1.56,.64,1) both;pointer-events:all}
+canvas#confetti-canvas{position:fixed;inset:0;z-index:400;pointer-events:none;width:100%;height:100%}
+
+/* ROULETTE MODAL */
+#roulette-overlay{display:none;position:fixed;inset:0;z-index:350;
+  background:rgba(0,0,10,.93);align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px)}
+#roulette-overlay.show{display:flex}
+#roulette-box{background:#0e0e2a;border:2px solid var(--gold);border-radius:20px;
+  padding:32px 28px;text-align:center;max-width:320px;width:100%}
+#roulette-box h3{font-family:var(--fh);font-size:28px;letter-spacing:2px;color:var(--gold);margin-bottom:6px}
+#roulette-box p{font-size:12px;color:var(--txt2);margin-bottom:20px}
+#roulette-display{font-family:var(--fh);font-size:42px;letter-spacing:2px;color:#fff;
+  min-height:60px;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.04);border-radius:12px;margin-bottom:20px;padding:12px}
+#roulette-display.nobody{color:rgba(255,255,255,.3)}
+#roulette-spin{background:var(--gold);border:none;color:#000;font-family:var(--fh);
+  font-size:18px;letter-spacing:1px;padding:12px 32px;border-radius:100px;cursor:pointer;margin-bottom:10px;width:100%}
+#roulette-close{background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--txt2);
+  font-size:12px;padding:8px 20px;border-radius:100px;cursor:pointer;font-family:var(--fb)}
+#roulette-close:hover{border-color:var(--neon);color:var(--neon)}
+
+/* UNLOCK MODAL */
+#unlock-overlay{display:none;position:fixed;inset:0;z-index:9500;
+  background:rgba(0,0,10,.95);align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)}
+#unlock-overlay.show{display:flex}
+#unlock-box{background:#0e0e2a;border:2px solid var(--neon);border-radius:20px;
+  padding:36px 32px;text-align:center;max-width:320px;width:100%}
+#unlock-box h3{font-family:var(--fh);font-size:28px;letter-spacing:2px;color:var(--neon);margin-bottom:8px}
+#unlock-box p{font-size:13px;color:var(--txt2);margin-bottom:20px}
+#unlock-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.3);
+  border-radius:10px;padding:12px 16px;font-size:18px;color:#fff;text-align:center;
+  font-family:var(--fb);margin-bottom:16px;letter-spacing:4px}
+#unlock-input:focus{outline:none;border-color:var(--neon)}
+#unlock-submit{background:var(--neon);border:none;color:#fff;font-family:var(--fh);
+  font-size:18px;letter-spacing:1px;padding:12px 32px;border-radius:100px;cursor:pointer;width:100%}
+#unlock-error{font-size:12px;color:#ff5555;margin-top:8px;display:none}
+
+#toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:rgba(10,10,30,.97);border:1px solid var(--neon);padding:11px 22px;
+  border-radius:100px;font-size:13px;color:var(--txt);transition:transform .35s,opacity .35s;
+  opacity:0;pointer-events:none;white-space:nowrap;z-index:200;box-shadow:0 0 24px rgba(255,31,110,.3)}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+#loading{position:fixed;inset:0;z-index:700;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#loading h2{font-family:var(--fh);font-size:32px;letter-spacing:4px;color:var(--gold)}
+#loading p{font-size:12px;color:var(--txt2);letter-spacing:1px}
+#loading.hidden{display:none}
+
+#reset-wrap{z-index:1;margin-top:8px}
+#reset-btn{background:transparent;border:1px solid rgba(255,31,110,.25);color:rgba(255,31,110,.4);
+  font-size:10px;padding:6px 16px;border-radius:100px;cursor:pointer;letter-spacing:1px;
+  transition:all .2s;font-family:var(--fb)}
+#reset-btn:hover{border-color:var(--neon);color:var(--neon)}
+
+@media(max-width:480px){
+  #game-area{gap:6px}
+  #chute-box{width:64px}
+  .chute-ball{width:46px;height:46px;font-size:18px}
+  #chute-container{width:64px;padding:24px 4px 8px}
+}
+
+/* ── INSTRUCCIONES ── */
+#instrucciones-overlay{display:none;position:fixed;inset:0;z-index:9600;
+  background:rgba(0,0,10,.92);align-items:center;justify-content:center;
+  padding:20px;backdrop-filter:blur(10px)}
+#instrucciones-overlay.show{display:flex}
+#instrucciones-box{background:#0d0d26;border:1.5px solid rgba(255,204,0,.3);
+  border-radius:20px;max-width:400px;width:100%;max-height:85vh;overflow-y:auto;
+  padding:28px 24px;display:flex;flex-direction:column;gap:16px;
+  box-shadow:0 0 60px rgba(255,204,0,.1)}
+#instrucciones-box h3{font-family:var(--fh);font-size:26px;letter-spacing:2px;
+  color:var(--gold);text-align:center}
+.instr-list{display:flex;flex-direction:column;gap:10px;list-style:none;padding:0}
+.instr-list li{display:flex;gap:10px;align-items:flex-start;font-size:13px;
+  color:var(--txt3);line-height:1.6;padding:8px 10px;border-radius:10px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(100,100,200,.1)}
+.instr-list li .instr-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.instr-list li strong{color:var(--txt);font-weight:600}
+#instrucciones-box .instr-close{background:rgba(255,204,0,.12);border:1px solid rgba(255,204,0,.3);
+  color:var(--gold);font-family:var(--fh);font-size:16px;letter-spacing:1px;
+  padding:10px;border-radius:100px;cursor:pointer;text-align:center;width:100%;transition:all .2s}
+#instrucciones-box .instr-close:hover{background:rgba(255,204,0,.22)}
+
+/* Botón flotante instrucciones */
+#instrucciones-fab{position:fixed;bottom:72px;right:16px;z-index:8000;
+  background:rgba(12,12,32,.9);border:1px solid rgba(255,204,0,.25);
+  color:rgba(255,204,0,.6);font-size:11px;letter-spacing:.5px;
+  padding:6px 12px;border-radius:100px;cursor:pointer;font-family:var(--fb);
+  transition:all .2s;backdrop-filter:blur(4px)}
+#instrucciones-fab:hover{border-color:var(--gold);color:var(--gold);
+  box-shadow:0 0 16px rgba(255,204,0,.2)}
+
+/* Botón instrucciones en welcome */
+.welcome-instr-btn{background:transparent;border:1px solid rgba(255,204,0,.3);
+  color:rgba(255,204,0,.7);font-size:12px;padding:8px 20px;border-radius:100px;
+  cursor:pointer;font-family:var(--fb);transition:all .2s;margin-bottom:4px}
+.welcome-instr-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── ADMIN PANEL ── */
+#admin-overlay{position:fixed;inset:0;z-index:9800;pointer-events:all;background:rgba(0,0,10,.96);
+  align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto;backdrop-filter:blur(10px)}
+#admin-overlay.show{display:flex !important}
+#admin-box{background:#0c0c22;border:1.5px solid rgba(100,100,200,.3);border-radius:18px;
+  width:min(540px,100%);padding:20px;display:flex;flex-direction:column;gap:16px;margin:auto}
+#admin-box h2{font-family:var(--fh);font-size:26px;letter-spacing:2px;color:var(--gold);
+  display:flex;align-items:center;justify-content:space-between}
+.admin-section{background:rgba(255,255,255,.025);border:1px solid rgba(100,100,200,.12);
+  border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.admin-section h3{font-family:var(--fh);font-size:14px;letter-spacing:1px;color:var(--txt3);margin-bottom:2px}
+.admin-btn{padding:9px 14px;border-radius:10px;border:none;font-family:var(--fb);
+  font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;width:100%}
+.admin-btn.danger{background:rgba(255,31,110,.1);color:var(--neon);border:1px solid rgba(255,31,110,.2)}
+.admin-btn.danger:hover{background:rgba(255,31,110,.2)}
+.admin-btn.primary{background:rgba(0,224,255,.08);color:var(--neon2);border:1px solid rgba(0,224,255,.18)}
+.admin-btn.primary:hover{background:rgba(0,224,255,.18)}
+.admin-btn.gold{background:rgba(255,204,0,.08);color:var(--gold);border:1px solid rgba(255,204,0,.18)}
+.admin-btn.gold:hover{background:rgba(255,204,0,.18)}
+.chuleta-list{display:flex;flex-direction:column;gap:5px;max-height:280px;overflow-y:auto}
+.chuleta-item{display:flex;gap:8px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.025);
+  border:1px solid rgba(100,100,200,.08);font-size:10px;align-items:flex-start}
+.chuleta-num{font-family:var(--fh);font-size:13px;color:var(--txt2);min-width:20px;padding-top:1px}
+.chuleta-info{display:flex;flex-direction:column;gap:2px;flex:1}
+.chuleta-title{font-weight:600;color:var(--txt);font-size:11px}
+.chuleta-desc{color:var(--txt2);font-size:9px;line-height:1.4}
+.chuleta-cat{font-size:7px;letter-spacing:1px;padding:1px 5px;border-radius:100px;margin-bottom:2px;display:inline-block;text-transform:uppercase}
+.admin-select{background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);
+  color:var(--txt);border-radius:8px;padding:7px 10px;font-size:12px;width:100%;font-family:var(--fb)}
+.admin-select:focus{outline:none;border-color:var(--gold)}
+.admin-input-row{display:flex;gap:8px}
+.admin-input-row input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);
+  color:var(--txt);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fb)}
+.admin-input-row input:focus{outline:none;border-color:var(--neon2)}
+</style>
+</head>
+<body class="locked">
+
+<div id="lock-overlay"></div>
+
+<div id="loading"><h2>PURICUP 🏆</h2><p>Cargando…</p></div>
+
+<!-- WELCOME -->
+<div id="welcome-overlay" role="dialog">
+  <div id="welcome-box">
+    <div class="w-trophy">🏆</div>
+    <h2>PURICUP</h2>
+    <!-- ══════════════════════════════════════════
+         CAMBIA ESTE TEXTO POR EL TUYO
+         ══════════════════════════════════════════ -->
+    <p>
+      Bienvenido <strong style="color:var(--gold)">Richi</strong> a tu despedida de soltero.<br><br>
+      Has sido elegido para casarte con la <strong style="color:var(--neon)">Puri</strong>, pero eso no está decidido.<br><br>
+      Con las próximas pruebas demostrarás que eres apto para ello y que te mereces su corazoncito.<br><br>
+      ¿Estás listo?
+    </p>
+    <button class="welcome-instr-btn" onclick="showInstrucciones()">📋 Ver instrucciones</button>
+    <button onclick="closeWelcome()">¡SÍ, ESTOY LISTO! 💪</button>
+  </div>
+</div>
+
+<header>
+  <h1>PURICUP 🏆</h1>
+</header>
+
+<div id="stats-wrap"><div id="stats">
+  <div class="stat"><div class="stat-n active" id="s-active">0</div><div class="stat-l">Pruebas activas</div></div>
+  <div class="stat"><div class="stat-n done" id="s-done">0</div><div class="stat-l">Realizadas</div></div>
+  <div class="stat"><div class="stat-n rem" id="s-rem">34</div><div class="stat-l">En máquina</div></div>
+  <div class="stat"><div class="stat-n wild" id="s-wild">0</div><div class="stat-l">Comodines 🃏</div></div>
+  <div class="stat"><div class="stat-n" id="s-tiradas" style="color:var(--neon)">0</div><div class="stat-l">Tiradas</div></div>
+</div></div>
+
+<div id="game-area">
+  <div id="machine-wrap"><div id="fin-overlay">
+    <div id="fin-trofeo">🏆</div>
+    <div id="fin-titulo">La PURICUP ha terminado</div>
+    <div id="fin-sub">Todos ganaron. Todos perdieron.<br>Richi sobrevivió. La Puri también.<br>El finde fue una obra maestra del caos.</div>
+    <a id="fin-link" href="https://www.instagram.com/p/DYfhMbxIR-t/" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      Ver el vídeo del finde
+    </a>
+    <div id="fin-estrellas">★ ★ ★ ★ ★</div>
+  </div>
+  <canvas id="c" width="420" height="500"></canvas></div>
+  <div id="chute-box">
+    <div id="chute-label">Toca<br>la bola</div>
+    <div id="chute-container"></div>
+  </div>
+</div>
+
+<div id="controls">
+  <div id="dpad">
+    <button class="btn" id="btn-l">◀</button>
+    <button class="btn drop" id="btn-drop">BAJAR</button>
+    <button class="btn" id="btn-r">▶</button>
+  </div>
+  <p id="hint">◀ ▶ mover · BAJAR atrapar</p>
+</div>
+
+<!-- PANEL COMODINES -->
+<div id="comodin-panel" style="width:min(700px,100%);background:var(--panel);border:1px solid rgba(255,204,0,.2);border-radius:14px;overflow:hidden;z-index:1">
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(100,100,200,.12)">
+    <div style="font-family:var(--fh);font-size:20px;letter-spacing:1px;color:var(--gold);flex:1">🃏 COMODINES</div>
+    <div id="comodin-disponibles" style="font-size:10px;color:var(--txt2);letter-spacing:1px"></div>
+    <button id="usar-comodin-btn" onclick="showRoulette()" style="background:rgba(255,204,0,.12);border:1px solid rgba(255,204,0,.3);color:var(--gold);font-family:var(--fh);font-size:13px;letter-spacing:1px;padding:6px 16px;border-radius:100px;cursor:pointer;transition:all .2s">USAR COMODÍN</button>
+  </div>
+  <div id="comodin-lista" style="padding:12px 18px;min-height:40px;display:flex;flex-wrap:wrap;gap:8px">
+    <div style="font-size:12px;color:var(--txt2);font-style:italic;padding:8px 0">Sin comodines usados aún</div>
+  </div>
+</div>
+
+<div id="panel">
+  <div class="cat-block">
+    <div class="cat-header">
+      <div class="cat-pill" style="background:rgba(255,31,110,.12);color:var(--cat-c);border:1px solid rgba(255,31,110,.25)">CONTINUA</div>
+      <div class="cat-name" style="color:var(--cat-c)">Continuas</div>
+      <div class="cat-stats" id="stats-continuas">—</div>
+    </div>
+    <div class="cards-grid" id="grid-continuas"><div class="empty-msg">Sin pruebas extraídas aún</div></div>
+  </div>
+  <div class="cat-block">
+    <div class="cat-header">
+      <div class="cat-pill" style="background:rgba(0,224,255,.1);color:var(--cat-1);border:1px solid rgba(0,224,255,.2)">DÍA 1</div>
+      <div class="cat-name" style="color:var(--cat-1)">Primer día</div>
+      <div class="cat-stats" id="stats-dia1">—</div>
+    </div>
+    <div class="cards-grid" id="grid-dia1"><div class="empty-msg">Sin pruebas extraídas aún</div></div>
+  </div>
+  <div class="cat-block">
+    <div class="cat-header">
+      <div class="cat-pill" style="background:rgba(255,204,0,.1);color:var(--cat-2);border:1px solid rgba(255,204,0,.2)">DÍA 2</div>
+      <div class="cat-name" style="color:var(--cat-2)">Segundo día</div>
+      <div class="cat-stats" id="stats-dia2">—</div>
+    </div>
+    <div class="cards-grid" id="grid-dia2"><div class="empty-msg">Sin pruebas extraídas aún</div></div>
+  </div>
+  <div class="cat-block" id="cat-sorpresa-block" style="display:none">
+    <div class="cat-header">
+      <div class="cat-pill" style="background:rgba(170,68,255,.12);color:#aa44ff;border:1px solid rgba(170,68,255,.25)">SORPRESA</div>
+      <div class="cat-name" style="color:#aa44ff">Sorpresas <span style="font-family:var(--fb);font-size:11px;font-weight:400;color:rgba(170,68,255,.6);letter-spacing:0">(no cuentan para el cómputo final)</span></div>
+      <div class="cat-stats" id="stats-sorpresa">—</div>
+    </div>
+    <div class="cards-grid" id="grid-sorpresa"><div class="empty-msg">Sin sorpresas activadas aún</div></div>
+  </div>
+
+</div>
+</div>
+
+<div id="reset-wrap" style="position:relative;z-index:9002">
+  <button id="admin-open-btn" onclick="showAdminPanel()" style="background:rgba(20,20,50,.9);border:1.5px solid rgba(100,100,200,.3);color:var(--txt2);font-size:18px;width:52px;height:52px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;position:relative;z-index:9100;pointer-events:all" title="Panel admin">🕵️</button>
+</div>
+
+<!-- CARD MODAL -->
+<div id="card-overlay" role="dialog">
+  <div id="ball-burst"></div>
+  <div id="waiting-msg">ABRIENDO…</div>
+  <div class="card-scene" id="card-scene">
+    <div class="card-3d" id="card-3d">
+      <div class="card-face" id="cf-front"></div>
+      <div class="card-face card-back-face" id="cf-back"></div>
+    </div>
+  </div>
+  <div class="flip-hint" id="flip-hint">Toca para ver la prueba →</div>
+  <button id="card-close">✕</button>
+</div>
+
+<!-- MILESTONE -->
+<div id="milestone-overlay" role="dialog">
+  <div id="milestone-box">
+    <div class="m-emoji" id="m-emoji"></div>
+    <h2 id="m-title"></h2>
+    <p id="m-text"></p>
+    <button onclick="closeMilestone()">¡VAMOS! 🎉</button>
+  </div>
+</div>
+
+<!-- WIN CONFETTI -->
+<div id="win-overlay">
+  <canvas id="confetti-canvas"></canvas>
+  <div id="win-trophy">🏆</div>
+  <button id="win-close" onclick="closeWin()">¡PURICUP COMPLETADA!</button>
+</div>
+
+<!-- ROULETTE -->
+<div id="roulette-overlay" role="dialog">
+  <div id="roulette-box">
+    <h3>🃏 COMODÍN</h3>
+    <p>Gira la ruleta para ver quién te ayuda</p>
+    <div id="roulette-display">—</div>
+    <button id="roulette-spin" onclick="spinRoulette()">🎰 GIRAR</button>
+    <button id="roulette-close" onclick="closeRoulette()">Cancelar — guardar comodín</button>
+  </div>
+</div>
+
+<!-- UNLOCK -->
+<div id="unlock-overlay" role="dialog">
+  <div id="unlock-box">
+    <h3>🔐 ACCESO</h3>
+    <p>Introduce la contraseña para interactuar</p>
+    <input id="unlock-input" type="text" inputmode="text"
+      autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+      placeholder="Contraseña" maxlength="30"
+      style="-webkit-text-security:disc">
+    <button id="unlock-submit" onclick="submitUnlock()">ENTRAR</button>
+    <div id="unlock-error">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- UNLOCK BAR -->
+<div id="unlock-bar">
+  <button id="unlock-btn" onclick="showUnlock()">🔒 Desbloquear interacción</button>
+</div>
+
+<!-- INSTRUCCIONES -->
+<div id="instrucciones-overlay" role="dialog" aria-label="Instrucciones">
+  <div id="instrucciones-box">
+    <h3>📋 INSTRUCCIONES</h3>
+    <ul class="instr-list">
+      <li><span class="instr-icon">🎰</span><span>La máquina sacará tus pruebas de forma aleatoria. <strong>Tú no eliges.</strong></span></li>
+      <li><span class="instr-icon">📌</span><span>Cada prueba que aparezca queda <strong>activa hasta que la cumplas.</strong> No caduca.</span></li>
+      <li><span class="instr-icon">⚡</span><span>Puedes tener <strong>varias pruebas activas a la vez.</strong> Organízate.</span></li>
+      <li><span class="instr-icon">✅</span><span>Cuando superes una prueba, <strong>márcala como completada</strong> en el panel.</span></li>
+      <li><span class="instr-icon">🔁</span><span>Algunas pruebas <strong>duran todo el finde.</strong> No las olvides, el grupo vigila.</span></li>
+      <li><span class="instr-icon">⏳</span><span>Si una prueba no se puede hacer en ese momento, <strong>seguirá pendiente</strong> hasta que puedas cumplirla.</span></li>
+      <li><span class="instr-icon">🃏</span><span>Los comodines pueden ayudarte, pero <strong>no te salvan del ridículo.</strong></span></li>
+      <li><span class="instr-icon">👰</span><span><strong>La Puri debe ir siempre contigo.</strong> Sin excepciones.</span></li>
+      <li><span class="instr-icon">⚖️</span><span><strong>Aquí no se discute con la máquina.</strong> Lo que sale, sale.</span></li>
+      <li><span class="instr-icon">✨</span><span>Pueden suceder <strong>eventos sorpresa</strong> en cualquier momento. Son especiales y <strong>no cuentan para el cómputo final</strong> de pruebas.</span></li>
+    </ul>
+    <button class="instr-close" onclick="closeInstrucciones()">¡ENTENDIDO, A POR ELLO! 💪</button>
+  </div>
+</div>
+
+<!-- Botón flotante instrucciones -->
+<button id="instrucciones-fab" onclick="showInstrucciones()">📋 Instrucciones</button>
+
+<!-- ADMIN PANEL -->
+<div id="admin-overlay" style="display:none" onclick="event.stopPropagation()">
+  <div id="admin-box">
+    <h2>🕵️ PANEL ADMIN <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,.08);border:none;color:var(--txt2);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px">✕</button></h2>
+
+    <!-- Tiradas -->
+    <div class="admin-section">
+      <h3>🎯 TIRADAS DE MÁQUINA</h3>
+      <div style="font-size:13px;color:var(--txt3)">Disponibles: <strong id="admin-tiradas-disp" style="color:var(--neon2)">0</strong> · Usadas: <strong id="admin-tiradas-used" style="color:var(--txt2)">0</strong></div>
+      <div class="admin-input-row">
+        <input id="admin-tiradas-n" type="number" min="1" max="50" placeholder="Nº tiradas" value="5">
+        <button class="admin-btn primary" onclick="adminAnadirTiradas()" style="width:auto;white-space:nowrap">＋ Añadir</button>
+        <button class="admin-btn danger" onclick="adminQuitarTiradas()" style="width:auto;white-space:nowrap">－ Quitar</button>
+      </div>
+    </div>
+
+    <!-- ORDEN DE PRUEBAS drag & drop -->
+    <div class="admin-section">
+      <h3>🔀 ORDEN DE PRUEBAS <span style="font-size:10px;font-weight:400;color:var(--txt2);letter-spacing:0">arrastra para reordenar</span></h3>
+      <div id="admin-next-prueba" style="font-size:12px;color:var(--txt3);margin-bottom:4px"></div>
+      <div id="drag-list" style="display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto;padding-right:4px"></div>
+      <button class="admin-btn primary" id="btn-guardar-orden" onclick="adminGuardarOrden()" style="display:none;margin-top:4px">💾 Guardar nuevo orden</button>
+    </div>
+
+    <!-- Comodines -->
+    <div class="admin-section">
+      <h3>🃏 COMODINES</h3>
+      <div style="font-size:12px;color:var(--txt3)">Disponibles: <strong id="admin-wild-n" style="color:var(--gold)">0</strong></div>
+      <div style="display:flex;gap:6px">
+        <button class="admin-btn gold" onclick="adminAnadirComodin()" style="flex:1">＋ Añadir comodín</button>
+        <button class="admin-btn danger" onclick="adminQuitarComodin()" style="flex:1">－ Quitar comodín</button>
+      </div>
+      <hr style="border:none;border-top:1px solid rgba(100,100,200,.1);margin:4px 0">
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:2px">Forzar quién sale en la próxima ruleta:</div>
+      <select id="admin-comodin-select" class="admin-select">
+        <option value="">— Aleatorio —</option>
+      </select>
+      <div id="admin-comodin-forzado" style="font-size:11px;color:var(--gold);display:none"></div>
+      <hr style="border:none;border-top:1px solid rgba(100,100,200,.1);margin:4px 0">
+      <div style="font-size:10px;color:var(--txt2);margin-bottom:4px;letter-spacing:.5px;text-transform:uppercase">Comodines usados:</div>
+      <div id="admin-comodin-usados" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px"></div>
+      <div style="display:flex;gap:6px">
+        <button class="admin-btn gold" onclick="adminForzarComodin()" style="flex:1">Forzar</button>
+        <button class="admin-btn" onclick="adminQuitarForzado()" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--txt2);font-size:11px">Quitar forzado</button>
+      </div>
+    </div>
+
+    <!-- Añadir prueba -->
+    <div class="admin-section">
+      <h3>➕ AÑADIR / BORRAR PRUEBA</h3>
+      <div style="display:grid;grid-template-columns:48px 1fr 1fr;gap:6px;align-items:center">
+        <input id="new-emoji" type="text" placeholder="🎯" maxlength="4"
+          style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 6px;font-size:16px;font-family:var(--fb);text-align:center;width:100%">
+        <select id="new-cat" class="admin-select">
+          <option value="continuas">🔁 Continua</option>
+          <option value="dia1">☀️ Día 1</option>
+          <option value="dia2">🌙 Día 2</option>
+          <option value="sorpresa">✨ Sorpresa</option>
+          <option value="comodin">🃏 Comodín</option>
+        </select>
+        <select id="new-pos" class="admin-select">
+          <option value="0">📍 Al final</option>
+        </select>
+      </div>
+      <input id="new-titulo" type="text" placeholder="Título de la prueba" maxlength="60"
+        style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fb);width:100%">
+      <textarea id="new-desc" placeholder="Descripción detallada…" rows="2"
+        style="background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:11px;font-family:var(--fb);width:100%;resize:vertical"></textarea>
+      <button class="admin-btn primary" onclick="adminAnadirPrueba()">➕ Añadir prueba</button>
+      <hr style="border:none;border-top:1px solid rgba(100,100,200,.1);margin:4px 0">
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:4px">Borrar una prueba existente:</div>
+      <div style="display:flex;gap:6px">
+        <select id="del-prueba-sel" class="admin-select" style="flex:1"></select>
+        <button class="admin-btn danger" onclick="adminBorrarPrueba()" style="width:auto;white-space:nowrap;flex-shrink:0">🗑 Borrar</button>
+      </div>
+    </div>
+
+    <!-- Reiniciar -->
+    <div class="admin-section">
+      <h3>⚠️ ZONA DE PELIGRO</h3>
+      <button class="admin-btn danger" onclick="adminReset()">↺ Reiniciar partida completa</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   CONFIG — CAMBIA AQUÍ LO QUE NECESITES
+══════════════════════════════════════════════════ */
+const INTERACTION_PASSWORD = 'lapuri';
+const TIRADAS_PASSWORD   = 'elrichi';
+
+// URL de la imagen del reverso de las cartas (deja null si no tienes aún)
+// Para usarla: sube la imagen a un hosting (ej: imgur.com) y pega la URL aquí
+const BACK_IMAGE_URL = 'https://i.imgur.com/lXIKum7.png';
+
+// Asistentes para la ruleta de comodines
+const ASISTENTES = ['Rafa','Alberto','Dani','Kim','Ansano','Javi','Jossan','Ramon','Nadie 😢'];
+// 'Nadie' aparece en negro cuando sale — edita la lista como quieras
+
+// Milestones por categoría
+const MILESTONES = {
+  continuas_done: { emoji:'🎊', title:'¡CONTINUAS DESBLOQUEADAS!', text:'¡Enhorabuena! Has desbloqueado todas las pruebas continuas. El grupo está impresionado. Pero esto no ha hecho más que empezar…' },
+  dia1_done:      { emoji:'🌙', title:'¡DÍA 1 DESBLOQUEADO!',      text:'¡Enhorabuena! Has desbloqueado todas las pruebas del primer día. Descansa… si puedes. Mañana viene lo bueno.' },
+  all_done:       { emoji:'🏆', title:'¡TODAS DESBLOQUEADAS!',   text:'Has desbloqueado las 30 pruebas. Eres un auténtico candidato a casarte con la Puri.' },
+};
+
+/* ══════════════════════════════════════════════════
+   CATEGORÍAS
+══════════════════════════════════════════════════ */
+const CAT = {
+  continuas:{ label:'Continuas',  color:'#ff1f6e', tag:'CONTINUA', bg:'rgba(255,31,110,.12)',  cardGrad:'linear-gradient(145deg,#1a0015,#4a0030)' },
+  dia1:     { label:'Primer día', color:'#00e0ff', tag:'DÍA 1',    bg:'rgba(0,224,255,.1)',    cardGrad:'linear-gradient(145deg,#001830,#003a5a)' },
+  dia2:     { label:'Segundo día',color:'#ffcc00', tag:'DÍA 2',    bg:'rgba(255,204,0,.1)',    cardGrad:'linear-gradient(145deg,#1a1400,#3a3000)' },
+  sorpresa: { label:'Sorpresa',   color:'#aa44ff', tag:'SORPRESA', bg:'rgba(170,68,255,.12)',  cardGrad:'linear-gradient(145deg,#0e0020,#2a0060)' },
+  comodin:  { label:'Comodín',   color:'#ffcc00', tag:'COMODÍN',  bg:'rgba(255,204,0,.15)',   cardGrad:'linear-gradient(145deg,#1a1000,#4a2800)' },
+};
+
+const BALL_PALETTE = [
+  ['#ff1f6e','#ff80b0'],['#00e0ff','#80f0ff'],['#ffcc00','#ffe680'],
+  ['#a855f7','#d09aff'],['#22dd88','#86efc4'],['#ff7020','#ffb080'],
+  ['#e0103a','#f97090'],['#1090e0','#60c0ff'],['#80cc10','#c0ee70'],
+  ['#e0109a','#f070cc'],['#10c0d0','#70e8f0'],['#e0a010','#f0d060'],
+  ['#6010e0','#b070ff'],['#10e060','#70ffb0'],
+];
+
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+let allPruebas = [];
+let wildcards       = 0;   // comodines acumulados
+let contadores      = {};  // {id: {activo, actual, total}} — guardado en servidor
+let tiradasDisp    = 0;   // tiradas habilitadas por el admin
+let tiradasUsadas  = 0;   // tiradas gastadas en esta sesión
+let comodinesUsados= [];  // array de {id, nombre} comodines gastados
+let adminUnlocked  = false; // panel admin desbloqueado
+let forzarComodin  = null;  // nombre forzado para próxima ruleta
+let forzarPruebaId = null;  // id de prueba forzada como próxima
+let ballsExtracted = 0;      // contador total de bolas extraídas
+let milestoneShown = { continuas:false, dia1:false, all:false };
+let pendingCompletarId = null; // para comodín
+let rouletteResult = null;
+
+/* ══════════════════════════════════════════════════
+   LOCK / UNLOCK
+══════════════════════════════════════════════════ */
+function showUnlock() {
+  if (!document.body.classList.contains('locked')) return;
+  const overlay = document.getElementById('unlock-overlay');
+  const input = document.getElementById('unlock-input');
+  overlay.classList.add('show');
+  input.value = '';
+  document.getElementById('unlock-error').style.display = 'none';
+  // En iOS el focus solo funciona desde un gesto directo — intentarlo igualmente
+  try { input.focus(); } catch(e) {}
+}
+// listener del input — se añade una vez en init
+
+
+function initUnlockInput() {
+  const inp = document.getElementById('unlock-input');
+  inp.addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); submitUnlock(); }});
+  inp.addEventListener('keyup',   e => { if(e.key==='Enter'){ e.preventDefault(); submitUnlock(); }});
+}
+
+function submitUnlock() {
+  const val = document.getElementById('unlock-input').value.trim();
+  if (val === INTERACTION_PASSWORD) {
+    document.body.classList.remove('locked');
+    document.getElementById('unlock-overlay').classList.remove('show');
+    document.getElementById('unlock-btn').textContent = '🔓 Modo interactivo activo';
+    document.getElementById('unlock-btn').style.color = 'var(--green)';
+    document.getElementById('unlock-btn').style.borderColor = 'var(--green)';
+    document.getElementById('unlock-btn').onclick = null;
+  } else {
+    document.getElementById('unlock-error').style.display = 'block';
+    document.getElementById('unlock-input').value = '';
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   WELCOME
+══════════════════════════════════════════════════ */
+function setWelcomeSeen() {
+  // Guardar en servidor (persiste en todos los dispositivos)
+  fetch('/api/config', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({key:'welcome_seen',value:'1'})
+  }).catch(()=>{});
+  // También local como backup
+  try { localStorage.setItem('puricup_welcome_seen','1'); } catch(e){}
+  sessionStorage.setItem('puricup_welcome_seen','1');
+}
+async function getWelcomeSeen() {
+  // Primero comprobar local (más rápido)
+  try { if(localStorage.getItem('puricup_welcome_seen')) return true; } catch(e){}
+  if(sessionStorage.getItem('puricup_welcome_seen')) return true;
+  // Luego preguntar al servidor
+  try {
+    const r = await fetch('/api/config/welcome_seen');
+    if(r.ok){ const d=await r.json(); return d.value==='1'; }
+  } catch(e){}
+  return false;
+}
+function showInstrucciones(){
+  document.getElementById('instrucciones-overlay').classList.add('show');
+}
+function closeInstrucciones(){
+  document.getElementById('instrucciones-overlay').classList.remove('show');
+}
+
+function closeWelcome() {
+  document.getElementById('welcome-overlay').classList.remove('show');
+  setWelcomeSeen();
+}
+
+/* ══════════════════════════════════════════════════
+   API
+══════════════════════════════════════════════════ */
+async function apiFetch(path, opts={}) {
+  const r = await fetch(path, { headers:{'Content-Type':'application/json'}, ...opts });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error||'Error'); }
+  return r.json();
+}
+async function loadContadores(){
+  try{
+    const r=await fetch('/api/config/contadores');
+    if(r.ok){const d=await r.json();contadores=JSON.parse(d.value||'{}');}
+  }catch(e){contadores={};}
+}
+
+async function saveContadores(){
+  try{
+    await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({key:'contadores',value:JSON.stringify(contadores)})});
+  }catch(e){}
+}
+
+// ── ESTADO GRANULAR: cada campo tiene su propia clave en /api/config ─────
+// Así dos móviles no se machacan mutuamente al guardar campos distintos
+
+async function configGet(key){ try{ const r=await fetch('/api/config/'+key); if(r.ok){const d=await r.json();return d.value;} }catch(e){} return null; }
+async function configSet(key,value){ try{ await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,value:String(value)})}); }catch(e){} }
+async function configSetJSON(key,value){ await configSet(key,JSON.stringify(value)); }
+async function configGetJSON(key,fallback){ const v=await configGet(key); try{ return v?JSON.parse(v):fallback; }catch(e){ return fallback; } }
+
+async function loadEstadoJuego(){
+  try{
+    const [td,tu,wc,cu,be,fc] = await Promise.all([
+      configGet('tiradas_disp'),
+      configGet('tiradas_usadas'),
+      configGet('wildcards'),
+      configGetJSON('comodines_usados',[]),
+      configGet('balls_extracted'),
+      configGet('forzar_comodin'),
+    ]);
+    if(td!==null) tiradasDisp    = parseInt(td)||0;
+    if(tu!==null) tiradasUsadas  = parseInt(tu)||0;
+    if(wc!==null) wildcards      = parseInt(wc)||0;
+    if(cu!==null) comodinesUsados= cu;
+    if(be!==null) ballsExtracted = parseInt(be)||0;
+    forzarComodin = fc||null;
+  }catch(e){}
+}
+
+// Guardar solo el campo que cambia
+async function saveTiradas(){ await Promise.all([configSet('tiradas_disp',tiradasDisp),configSet('tiradas_usadas',tiradasUsadas)]); }
+async function saveWildcards(){ await Promise.all([configSet('wildcards',wildcards),configSetJSON('comodines_usados',comodinesUsados)]); }
+async function saveBallsExtracted(){ await configSet('balls_extracted',ballsExtracted); }
+async function saveForzarComodin(){ await configSet('forzar_comodin',forzarComodin||''); }
+async function saveEstadoJuego(){ await Promise.all([saveTiradas(),saveWildcards(),saveBallsExtracted(),saveForzarComodin()]); }
+
+async function loadPruebas() {
+  const data = await apiFetch('/api/pruebas');
+  // Normalizar uso_comodin: puede venir null de la BD si la columna es nueva
+  allPruebas = data.map(p => ({ ...p, extraida: !!p.extraida, completada: !!p.completada, uso_comodin: !!p.uso_comodin, comodin_quien: p.comodin_quien || '' }));
+}
+
+async function doExtract() {
+  let targetId = forzarPruebaId;
+  forzarPruebaId = null; // limpiar tras usar
+  if(targetId){
+    // extraer la prueba forzada
+    await apiFetch(`/api/pruebas/${targetId}/extraer`, { method:'POST' });
+    const p = allPruebas.find(x=>x.id===targetId);
+    if (p) p.extraida = true;
+    return p || null;
+  }
+  const data = await apiFetch('/api/pruebas/next');
+  if (data.done) return null;
+  await apiFetch(`/api/pruebas/${data.id}/extraer`, { method:'POST' });
+  const p = allPruebas.find(x=>x.id===data.id);
+  if (p) p.extraida = true;
+  return data;
+}
+
+async function toggleComplete(id, uso_comodin=false) {
+  const data = await apiFetch(`/api/pruebas/${id}/completar`, {
+    method:'PATCH',
+    body: JSON.stringify({ uso_comodin })
+  });
+  const p = allPruebas.find(x=>x.id===id);
+  if (p) { p.completada = data.completada; p.uso_comodin = !!data.uso_comodin; }
+  return data.completada;
+}
+
+async function doUnextract(id) {
+  const data = await apiFetch(`/api/pruebas/${id}/unextract`, { method:'POST' });
+  const p = allPruebas.find(x=>x.id===id);
+  if (p) { p.extraida = false; p.completada = false; p.uso_comodin = false; p.comodin_quien = ''; }
+  if (data.devolver_comodin) {
+    wildcards++;
+    updateStats();
+    toast('🃏 ¡Comodín recuperado! Ahora tienes ' + wildcards);
+    saveWildcards();
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   PHYSICS + CANVAS
+══════════════════════════════════════════════════ */
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W=420,H=500,WL=24,WR=396,FY=444,CY=58,CHUTE_W=60,BR=16;
+const MAX_WIRE = FY-CY-BR*2-8;
+
+let balls=[],grabbed=null;
+let clawX=210,clawTX=210,wireLen=0;
+let phase='idle',animating=false;
+let particles=[],keys={};
+
+function remainingCount(){ return allPruebas.filter(p=>!p.extraida).length; }
+function extractedCount(){ return allPruebas.filter(p=>p.extraida&&p.categoria!=='sorpresa'&&p.categoria!=='comodin').length; }
+function completedCount(){ return allPruebas.filter(p=>p.completada&&p.categoria!=='sorpresa'&&p.categoria!=='comodin').length; }
+
+// Orden: continuas primero, luego dia1, luego dia2
+function getOrderedRemaining(){
+  const order = {continuas:0, dia1:1, dia2:2, sorpresa:3};
+  return allPruebas
+    .filter(p=>!p.extraida)
+    .sort((a,b)=> order[a.categoria]-order[b.categoria] || a.orden-b.orden);
+}
+
+function makeBalls(){
+  balls=[];
+  const ordered = getOrderedRemaining();
+  const total = Math.min(ordered.length, 18);
+  const cols=6;
+  for(let i=0;i<total;i++){
+    const p = ordered[i];
+    const col=i%cols, row=Math.floor(i/cols);
+    const catColors = {
+      continuas:['#ff1f6e','#ff80b0'],
+      dia1:     ['#00e0ff','#80f0ff'],
+      dia2:     ['#ffcc00','#ffe680'],
+      comodin:  ['#ffaa00','#ffe680'],
+    };
+    const c = catColors[p.categoria] || BALL_PALETTE[i%BALL_PALETTE.length];
+    balls.push({
+      x:WL+BR+8+col*((WR-WL-16-BR*2)/(cols-1))+(Math.random()-.5)*6,
+      y:FY-BR-row*(BR*2+4)-Math.random()*3,
+      vx:0,vy:0,r:BR,color:c[0],hi:c[1],
+      angle:Math.random()*Math.PI*2,av:(Math.random()-.5)*.12,
+      grabbed:false, pruebaId: p.id, categoria: p.categoria,
+    });
+  }
+}
+
+function settle(n){ for(let i=0;i<n;i++) phys(true); }
+
+function phys(hard){
+  const G=hard?2.8:.46,D=hard?.28:.91,AD=hard?.45:.97;
+  const rem = remainingCount();
+  for(const b of balls){
+    if(b.grabbed) continue;
+    b.vy+=G; b.vx*=D; b.vy*=D;
+    b.x+=b.vx; b.y+=b.vy;
+    b.angle+=b.av; b.av*=AD;
+    if(b.x-b.r<WL){b.x=WL+b.r;b.vx*=-.22;b.av+=.04;}
+    if(b.x+b.r>WR){b.x=WR-b.r;b.vx*=-.22;b.av-=.04;}
+    if(b.y+b.r>FY){b.y=FY-b.r;b.vy*=-.08;b.vx*=.9;}
+    if(b.y-b.r<CY){b.y=CY+b.r;b.vy*=-.08;}
+    for(const o of balls){
+      if(o===b||o.grabbed) continue;
+      const dx=b.x-o.x,dy=b.y-o.y,d=Math.sqrt(dx*dx+dy*dy),mn=b.r+o.r+1;
+      if(d<mn&&d>.01){
+        const nx=dx/d,ny=dy/d,ov=(mn-d)*.52;
+        b.x+=nx*ov;b.y+=ny*ov;o.x-=nx*ov;o.y-=ny*ov;
+        const rv=(b.vx-o.vx)*nx+(b.vy-o.vy)*ny;
+        if(rv<0){
+          const im=rv*(hard?1:.55);
+          b.vx-=im*nx*.5;b.vy-=im*ny*.5;
+          o.vx+=im*nx*.5;o.vy+=im*ny*.5;
+          b.av+=nx*rv*.04;o.av-=nx*rv*.04;
+        }
+      }
+    }
+  }
+}
+
+function rr(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);
+  c.closePath();
+}
+
+function drawBg(){
+  ctx.fillStyle='#05050f';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#0b0b20';rr(ctx,WL-14,0,(WR-WL)+28,H,14);ctx.fill();
+  ctx.fillStyle='rgba(50,50,160,.05)';ctx.fillRect(WL,CY,WR-WL,FY-CY);
+  ctx.strokeStyle='rgba(80,80,200,.035)';ctx.lineWidth=1;
+  for(let y=CY;y<FY;y+=5){ctx.beginPath();ctx.moveTo(WL,y);ctx.lineTo(WR,y);ctx.stroke();}
+  ctx.strokeStyle='#14143a';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(WL,CY-2);ctx.lineTo(WL,FY+14);ctx.moveTo(WR,CY-2);ctx.lineTo(WR,FY+14);ctx.stroke();
+  ctx.strokeStyle='#22226a';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(WL+1.5,CY);ctx.lineTo(WL+1.5,FY);ctx.moveTo(WR-1.5,CY);ctx.lineTo(WR-1.5,FY);ctx.stroke();
+  ctx.fillStyle='#070718';ctx.fillRect(WL-14,0,(WR-WL)+28,CY);
+  ctx.fillStyle='#0e0e30';ctx.fillRect(WL-14,CY-7,(WR-WL)+28,9);
+  // header text
+  ctx.fillStyle='#ffcc00';ctx.font="bold 15px 'Bebas Neue',cursive";
+  ctx.textAlign='center';ctx.letterSpacing='3px';
+  ctx.fillText('✦  OBTÉN TU PRUEBA  ✦',W/2,26);
+  ctx.fillStyle='#00e0ff';ctx.font='8px monospace';ctx.letterSpacing='1px';
+  ctx.fillText('ATRAPA UNA BOLA · REVELA TU PRUEBA',W/2,44);ctx.letterSpacing='0px';
+  // floor
+  ctx.fillStyle='#0d0d28';ctx.fillRect(WL,FY,WR-WL,14);
+  ctx.strokeStyle='#181848';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(WL,FY);ctx.lineTo(WR,FY);ctx.stroke();
+  // chute
+  ctx.fillStyle='#080820';ctx.fillRect(WL,FY+14,CHUTE_W,H-FY-14);
+  ctx.strokeStyle='#22226a';ctx.lineWidth=1;ctx.strokeRect(WL,FY+14,CHUTE_W,H-FY-14);
+  ctx.fillStyle='#3344aa';ctx.font='9px monospace';ctx.textAlign='center';
+  ctx.fillText('→ CAJA',WL+CHUTE_W/2,H-10);
+  // remaining ghost
+  if(remainingCount()>0){
+    ctx.fillStyle='rgba(255,255,255,.04)';
+    ctx.font="bold 60px 'Bebas Neue',cursive";ctx.textAlign='center';
+    ctx.fillText(remainingCount(),W/2,FY-12);
+  }
+}
+
+function drawRail(){
+  ctx.save();
+  ctx.strokeStyle='#3a3a88';ctx.lineWidth=7;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(WL+6,CY+5);ctx.lineTo(WR-6,CY+5);ctx.stroke();
+  ctx.strokeStyle='#6666aa';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(WL+6,CY+2);ctx.lineTo(WR-6,CY+2);ctx.stroke();
+  ctx.fillStyle='#6666bb';rr(ctx,clawX-10,CY-2,20,10,4);ctx.fill();
+  ctx.restore();
+}
+function drawWire(){
+  if(wireLen<=0)return;
+  ctx.save();ctx.strokeStyle='#8888aa';ctx.lineWidth=2;ctx.setLineDash([5,4]);
+  ctx.beginPath();ctx.moveTo(clawX,CY+8);ctx.lineTo(clawX,CY+8+wireLen);ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();
+}
+function drawClaw(open){
+  const cy=CY+8+wireLen;
+  ctx.save();ctx.strokeStyle='#aaaacc';ctx.lineWidth=2.5;ctx.lineCap='round';
+  const sp=open?22:6;
+  ctx.beginPath();ctx.moveTo(clawX,cy);ctx.quadraticCurveTo(clawX-sp-8,cy+14,clawX-sp,cy+26);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(clawX,cy);ctx.quadraticCurveTo(clawX+sp+8,cy+14,clawX+sp,cy+26);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(clawX,cy);ctx.lineTo(clawX,cy+16);ctx.stroke();
+  ctx.beginPath();ctx.arc(clawX,cy,5,0,Math.PI*2);ctx.fillStyle='#9999bb';ctx.fill();
+  ctx.restore();
+}
+function drawBall(b){
+  ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.angle);
+  ctx.beginPath();ctx.ellipse(0,b.r*.72,b.r*.82,b.r*.25,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,.22)';ctx.fill();
+  ctx.beginPath();ctx.arc(0,0,b.r,0,Math.PI*2);
+  const g=ctx.createRadialGradient(-b.r*.2,-b.r*.3,b.r*.1,0,0,b.r);
+  g.addColorStop(0,b.hi);g.addColorStop(1,b.color);
+  ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();ctx.arc(-b.r*.28,-b.r*.32,b.r*.28,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.32)';ctx.fill();
+  ctx.beginPath();ctx.arc(0,0,b.r,0,Math.PI*2);
+  ctx.strokeStyle=b.hi;ctx.lineWidth=1.2;ctx.globalAlpha=.4;ctx.stroke();
+  ctx.restore();
+}
+function drawParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    ctx.save();ctx.globalAlpha=p.life;ctx.fillStyle=p.c;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);ctx.fill();ctx.restore();
+    p.x+=p.vx;p.y+=p.vy;p.vy+=.2;p.life-=.025;
+    if(p.life<=0)particles.splice(i,1);
+  }
+}
+function spawnPfx(x,y,col){
+  for(let i=0;i<16;i++){
+    const a=Math.random()*Math.PI*2,s=Math.random()*5+2;
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-3,r:Math.random()*5+3,c:col,life:1});
+  }
+}
+function render(){
+  ctx.clearRect(0,0,W,H);drawBg();
+  for(const b of balls)if(!b.grabbed)drawBall(b);
+  drawRail();drawWire();
+  drawClaw(phase==='idle'||phase==='dropping');
+  if(grabbed){
+    const cy=CY+8+wireLen;
+    ctx.save();ctx.translate(grabbed.x,cy+26+grabbed.r);ctx.rotate(grabbed.angle+=.05);
+    const g=ctx.createRadialGradient(-grabbed.r*.2,-grabbed.r*.3,grabbed.r*.1,0,0,grabbed.r);
+    g.addColorStop(0,grabbed.hi);g.addColorStop(1,grabbed.color);
+    ctx.beginPath();ctx.arc(0,0,grabbed.r,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+    ctx.beginPath();ctx.arc(-grabbed.r*.28,-grabbed.r*.32,grabbed.r*.28,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,.32)';ctx.fill();ctx.restore();
+  }
+  drawParticles();
+}
+
+/* ══════════════════════════════════════════════════
+   GAME LOOP
+══════════════════════════════════════════════════ */
+const CLAW_SPEED=2.8, DROP_SPEED=2.2, RISE_SPEED=5;
+
+function gameLoop(){
+  if(!animating){
+    if(keys.l&&clawTX>WL+28)clawTX-=CLAW_SPEED;
+    if(keys.r&&clawTX<WR-28)clawTX+=CLAW_SPEED;
+  }
+  clawX+=(clawTX-clawX)*.18;
+
+  if(phase==='dropping'){wireLen+=DROP_SPEED;pushBalls();if(wireLen>=MAX_WIRE){wireLen=MAX_WIRE;phase='grab';}}
+  if(phase==='grab'){tryGrab();phase='rising';}
+  if(phase==='rising'){
+    wireLen-=RISE_SPEED;
+    if(grabbed){grabbed.x=clawX;grabbed.vx=0;grabbed.vy=0;}
+    if(wireLen<=0){wireLen=0;phase=grabbed?'sliding':'miss';}
+  }
+  if(phase==='sliding'){
+    clawTX-=3.5;clawX+=(clawTX-clawX)*.14;
+    if(grabbed)grabbed.x=clawX;
+    if(clawX<=WL+CHUTE_W/2)phase='scoring';
+  }
+  if(phase==='scoring'){
+    if(grabbed){
+      spawnPfx(clawX,FY-12,grabbed.color);
+      const col=grabbed.color;
+      const pruebaId=grabbed.pruebaId;
+      balls=balls.filter(b=>b!==grabbed);
+      grabbed=null;
+      tiradasUsadas++; // solo resta si cogió bola
+      updateStats();
+      saveTiradas();
+      doExtractAndAdd(col, pruebaId);
+    }
+    clawTX=210;phase='idle';animating=false;
+  }
+  if(phase==='miss'){
+    clawTX=210;phase='idle';animating=false;
+    toast('El gancho no atrapó nada — ¡inténtalo de nuevo!');
+  }
+  phys(false);render();
+  requestAnimationFrame(gameLoop);
+}
+
+function pushBalls(){
+  const cy=CY+8+wireLen+24;
+  for(const b of balls){
+    if(b.grabbed)continue;
+    const dx=b.x-clawX,dy=b.y-cy,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<b.r+20&&d>.01){
+      const nx=dx/d,ny=dy/d,f=(b.r+20-d)*.3;
+      b.vx+=nx*f;b.vy+=ny*f;b.av+=nx*f*.07;
+    }
+  }
+}
+
+function tryGrab(){
+  const cy=CY+8+wireLen+20;
+  const rem=remainingCount();
+  // dificultad más baja cuando quedan pocas bolas
+  const threshold = 0.0; // si toca la bola, la coge siempre
+  let best=null,bd=9999;
+  for(const b of balls){
+    if(b.grabbed)continue;
+    const dx=b.x-clawX,dy=b.y-cy,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<b.r+20&&d<bd){bd=d;best=b;}
+  }
+  if(best){
+    grabbed=best;grabbed.grabbed=true;grabbed.vx=0;grabbed.vy=0;
+  }
+}
+
+async function doExtractAndAdd(ballColor, pruebaId){
+  try {
+    ballsExtracted++;
+    saveBallsExtracted();
+
+    const prueba = await doExtract();
+    if(!prueba){ toast('¡Todas las pruebas han salido!'); updateStats(); return; }
+    await loadPruebas();
+    updateStats(); renderPanel();
+    // reemplazar la bola de esa prueba en la máquina (si había más)
+    if(balls.length===0&&remainingCount()>0){ makeBalls();settle(80); }
+
+    // solo una bola en caja a la vez — limpiar la anterior si estaba sin abrir
+    clearChute();
+    addBallToChute(prueba, ballColor);
+    checkMilestones();
+  } catch(e){ toast('Error: '+e.message); }
+}
+
+/* ══════════════════════════════════════════════════
+   CHUTE BOX
+══════════════════════════════════════════════════ */
+function clearChute(){
+  // eliminar bolas anteriores (solo dejar comodines)
+  const box=document.getElementById('chute-container');
+  const toRemove=[...box.querySelectorAll('.chute-ball:not(.wildcard)')];
+  toRemove.forEach(b=>b.remove());
+}
+
+function addBallToChute(prueba, color){
+  const box=document.getElementById('chute-container');
+  const ball=document.createElement('div');
+  ball.className='chute-ball';
+  ball.dataset.id=prueba.id;
+  const bgMap={continuas:'#ff1f6e',dia1:'#00e0ff',dia2:'#ffcc00',comodin:'#ffaa00'};
+  const bg=bgMap[prueba.categoria]||color;
+  // bolas comodín: clase wildcard + aspecto dorado especial
+  if(prueba.categoria==='comodin'){
+    ball.classList.add('wildcard');
+    ball.innerHTML=`<span>🃏</span>`;
+    ball.addEventListener('click',()=>{ if(!ball.dataset.opened) openWildcardBall(ball,prueba); });
+  } else {
+    ball.style.background=`radial-gradient(circle at 35% 35%,${lighten(bg)},${bg})`;
+    ball.style.boxShadow=`0 4px 16px ${bg}44,inset 0 -3px 8px rgba(0,0,0,.3),inset 0 3px 8px rgba(255,255,255,.2)`;
+    const pruebaDat=allPruebas.find(p=>p.id===prueba.id)||prueba;
+    ball.innerHTML=`<span>${pruebaDat.emoji||'🎯'}</span>`;
+    ball.addEventListener('click',()=>{ if(!ball.dataset.opened) openBall(ball,pruebaDat); });
+  }
+  box.appendChild(ball);
+  ball.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function openWildcardBall(ballEl, prueba){
+  ballEl.dataset.opened='1';
+  wildcards++;
+  updateStats();
+  saveWildcards();
+  toast('🃏 ¡Comodín desbloqueado! Ya tienes '+wildcards);
+  openWildcardCard(ballEl, prueba);
+}
+
+function addWildcardToChute(){
+  const box=document.getElementById('chute-container');
+  const ball=document.createElement('div');
+  ball.className='chute-ball wildcard';
+  ball.innerHTML='🃏';
+  ball.title='Comodín — toca para ver la carta';
+  ball.addEventListener('click',()=>{
+    if(ball.dataset.opened) return;
+    ball.dataset.opened='1';
+    openWildcardCard(ball);
+  });
+  box.appendChild(ball);
+}
+
+function openWildcardCard(ballEl, prueba){
+  const overlay=document.getElementById('card-overlay');
+  const burst=document.getElementById('ball-burst');
+  const waiting=document.getElementById('waiting-msg');
+  const scene=document.getElementById('card-scene');
+  const hint=document.getElementById('flip-hint');
+  const closeBtn=document.getElementById('card-close');
+  const card3d=document.getElementById('card-3d');
+
+  burst.style.background='radial-gradient(circle at 35% 35%,#ffe680,#ffaa00)';
+  burst.textContent='🃏';
+  burst.style.display='flex';
+  waiting.style.display='block';
+  scene.style.display='none';
+  hint.style.display='none';
+  closeBtn.classList.remove('show');
+  card3d.classList.remove('flipped');
+  overlay.classList.add('show');
+
+  setTimeout(()=>{burst.style.display='none';},550);
+  setTimeout(()=>{
+    waiting.style.display='none';
+    // Cara reverso (front — sin girar)
+    const front=document.getElementById('cf-front');
+    front.innerHTML='';
+    front.className='card-face';
+    if(BACK_IMAGE_URL){
+      front.classList.add('has-back-img');
+      front.style.border='2px solid #ffcc00';
+      front.style.boxShadow='0 0 18px rgba(255,204,0,.5),0 0 40px rgba(255,204,0,.2)';
+      const img=document.createElement('img');img.src=BACK_IMAGE_URL;img.alt='Reverso';
+      front.appendChild(img);
+    } else {
+      front.style.background='linear-gradient(145deg,#1a1000,#3a2800)';
+      front.style.border='2px solid rgba(255,204,0,.4)';
+      const icon=document.createElement('div');icon.className='card-back-icon';icon.textContent='🃏';
+      front.appendChild(icon);
+    }
+    // Cara comodín (back — al girar) — datos reales de Supabase
+    const back=document.getElementById('cf-back');
+    back.innerHTML='';
+    back.className='card-face card-back-face';
+    back.style.background='linear-gradient(145deg,#1a1000,#4a2800)';
+    back.style.border='2px solid rgba(255,204,0,.5)';
+    back.style.boxShadow='0 0 30px rgba(255,204,0,.3)';
+    const tag=document.createElement('div');tag.className='cat-tag-big';
+    tag.style.cssText='background:rgba(255,204,0,.15);color:#ffcc00;border:1px solid rgba(255,204,0,.3)';
+    tag.textContent='COMODÍN';
+    const pruebaDat=prueba?(allPruebas.find(p=>p.id===prueba.id)||prueba):null;
+    const emo=document.createElement('div');emo.className='card-emoji-big';
+    emo.textContent=pruebaDat?.emoji||'🃏';
+    const title=document.createElement('div');title.className='card-title';title.style.color='#ffcc00';
+    title.textContent=pruebaDat?.titulo||'¡COMODÍN!';
+    const desc=document.createElement('div');desc.className='card-desc';
+    desc.textContent=pruebaDat?.descripcion||'Puedes usar este comodín al completar una prueba para pedir ayuda.';
+    back.appendChild(tag);back.appendChild(emo);back.appendChild(title);back.appendChild(desc);
+    card3d.classList.remove('flipped');
+    scene.style.display='block';
+    hint.style.display='block';
+    hint.textContent='Toca la carta para ver el comodín →';
+    closeBtn.classList.add('show');
+  },2200);
+}
+
+function lighten(hex){
+  const n=parseInt(hex.replace('#',''),16);
+  const r=Math.min(255,((n>>16)&0xff)+80),g=Math.min(255,((n>>8)&0xff)+80),b=Math.min(255,(n&0xff)+80);
+  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+
+/* ══════════════════════════════════════════════════
+   OPEN BALL → CARD
+══════════════════════════════════════════════════ */
+function openBall(ballEl, prueba){
+  ballEl.dataset.opened='1';
+  const overlay=document.getElementById('card-overlay');
+  const burst=document.getElementById('ball-burst');
+  const waiting=document.getElementById('waiting-msg');
+  const scene=document.getElementById('card-scene');
+  const hint=document.getElementById('flip-hint');
+  const closeBtn=document.getElementById('card-close');
+  const card3d=document.getElementById('card-3d');
+
+  burst.style.background=ballEl.style.background;
+  burst.textContent=prueba.emoji||'🎯';
+  burst.style.display='flex';
+  waiting.style.display='block';
+  scene.style.display='none';
+  hint.style.display='none';
+  closeBtn.classList.remove('show');
+  card3d.classList.remove('flipped');
+  overlay.classList.add('show');
+
+  setTimeout(()=>{burst.style.display='none';},550);
+  setTimeout(()=>{
+    waiting.style.display='none';
+    buildCardFace(document.getElementById('cf-front'),prueba,false); // reverso en la cara frontal (visible SIN girar)
+    buildCardFace(document.getElementById('cf-back'),prueba,true);   // prueba en la cara trasera (visible AL girar)
+    card3d.classList.remove('flipped'); // empieza sin girar → se ve el reverso
+    scene.style.display='block';
+    hint.style.display='block';
+    hint.textContent='Toca la carta para ver la prueba →';
+    closeBtn.classList.add('show');
+  },2200);
+}
+
+function buildCardFace(el, prueba, isFront){
+  el.innerHTML='';
+  // isFront=true → prueba (cara trasera, visible al girar) → card-back-face
+  // isFront=false → reverso (cara frontal, visible sin girar) → sin clase extra
+  el.className='card-face'+(isFront?' card-back-face':'');
+  const meta=CAT[prueba.categoria]||CAT.continuas;
+
+  if(!isFront){
+    // REVERSO — imagen o diseño genérico
+    if(BACK_IMAGE_URL){
+      el.classList.add('has-back-img');
+      el.style.border='2px solid #ff1f6e';
+      el.style.boxShadow='0 0 18px rgba(255,31,110,.5), 0 0 40px rgba(255,31,110,.2)';
+      const img=document.createElement('img');img.src=BACK_IMAGE_URL;img.alt='Reverso';
+      el.appendChild(img);
+    } else {
+      el.style.background=meta.cardGrad;
+      el.style.border=`2px solid ${meta.color}44`;
+      const icon=document.createElement('div');icon.className='card-back-icon';icon.textContent='🎴';
+      const lbl=document.createElement('div');lbl.className='card-back-label';lbl.textContent='PRUEBA';
+      el.appendChild(icon);el.appendChild(lbl);
+    }
+  } else {
+    // FRONTAL — prueba
+    el.style.background=meta.cardGrad;
+    el.style.border=`2px solid ${meta.color}44`;
+    const tag=document.createElement('div');tag.className='cat-tag-big';
+    tag.style.cssText=`background:${meta.bg};color:${meta.color};border:1px solid ${meta.color}33`;
+    tag.textContent=meta.tag;
+    const emo=document.createElement('div');emo.className='card-emoji-big';emo.textContent=prueba.emoji||'🎯';
+    const title=document.createElement('div');title.className='card-title';title.textContent=prueba.titulo;
+    const desc=document.createElement('div');desc.className='card-desc';desc.textContent=prueba.descripcion;
+    el.appendChild(tag);el.appendChild(emo);el.appendChild(title);el.appendChild(desc);
+  }
+}
+
+document.getElementById('card-scene').addEventListener('click',()=>{
+  const c=document.getElementById('card-3d');
+  c.classList.toggle('flipped');
+  document.getElementById('flip-hint').textContent=
+    c.classList.contains('flipped')?'Toca para volver al reverso ←':'Toca la carta para ver la prueba →';
+});
+document.getElementById('card-close').addEventListener('click',()=>{
+  document.getElementById('card-overlay').classList.remove('show');
+  // eliminar la bola de la caja al cerrar
+  clearChute();
+});
+
+/* ══════════════════════════════════════════════════
+   PANEL
+══════════════════════════════════════════════════ */
+function renderPanel(){
+  // Mostrar bloque sorpresa solo si hay alguna extraída
+  const sorpresaBlock=document.getElementById('cat-sorpresa-block');
+  if(sorpresaBlock) sorpresaBlock.style.display=allPruebas.some(p=>p.categoria==='sorpresa'&&p.extraida)?'block':'none';
+  ['continuas','dia1','dia2','sorpresa'].forEach(cat=>{
+    const extracted=allPruebas.filter(p=>p.categoria===cat&&p.extraida);
+    const done=extracted.filter(p=>p.completada).length;
+    document.getElementById('stats-'+cat).textContent=
+      extracted.length?`${done}/${extracted.length} completadas`:'0 extraídas';
+    const grid=document.getElementById('grid-'+cat);
+    grid.innerHTML='';
+    if(!extracted.length){
+      grid.innerHTML='<div class="empty-msg">Sin pruebas extraídas aún</div>';
+      return;
+    }
+    const meta=CAT[cat];
+    extracted.forEach(p=>{
+      const th=document.createElement('div');
+      th.className='card-thumb'+(p.completada?' completada':'');
+      const order=document.createElement('div');order.className='thumb-order';order.textContent='#'+p.orden;
+      const body=document.createElement('div');body.className='thumb-body';
+      body.style.borderBottom='1px solid rgba(100,100,200,.1)';
+      const catTag=document.createElement('div');catTag.className='thumb-cat-tag';
+      catTag.style.cssText=`background:${meta.bg};color:${meta.color};border:1px solid ${meta.color}22`;
+      catTag.textContent=meta.tag;
+      const emo=document.createElement('div');emo.className='thumb-emoji';emo.textContent=p.emoji||'🎯';
+      const tit=document.createElement('div');tit.className='thumb-title';
+      tit.textContent=(p.uso_comodin?'🃏 ':'')+p.titulo;
+      if(p.uso_comodin && p.comodin_quien){
+        const quien=document.createElement('div');
+        const esNadie=p.comodin_quien.includes('Nadie');
+        quien.style.cssText='font-size:9px;margin-top:3px;letter-spacing:.5px;'+
+          'color:'+(esNadie?'rgba(255,255,255,.3)':'var(--gold)')+';font-style:italic';
+        quien.textContent=esNadie?'Sin ayuda 😢':'Ayuda: '+p.comodin_quien+' 🃏';
+        tit.appendChild(quien);
+      }
+      const dsc=document.createElement('div');dsc.className='thumb-desc';dsc.textContent=p.descripcion;
+      body.appendChild(catTag);body.appendChild(emo);body.appendChild(tit);body.appendChild(dsc);
+      // Contador debajo de la descripción
+      const cdata=contadores[p.id]||{activo:false,actual:0,total:0};
+      if(cdata.activo){
+        const crow=document.createElement('div');
+        crow.className='contador-row';
+        crow.style.marginTop='6px';
+        const btnM=document.createElement('button');btnM.textContent='－';
+        btnM.onclick=async(e)=>{e.stopPropagation();
+          if(!contadores[p.id])contadores[p.id]={activo:true,actual:0,total:0};
+          contadores[p.id].actual=Math.max(0,contadores[p.id].actual-1);
+          await saveContadores();renderPanel();};
+        const disp=document.createElement('div');disp.className='contador-display';
+        disp.textContent=cdata.actual+'/'+cdata.total;
+        const btnP=document.createElement('button');btnP.textContent='＋';
+        btnP.onclick=async(e)=>{e.stopPropagation();
+          if(!contadores[p.id])contadores[p.id]={activo:true,actual:0,total:0};
+          contadores[p.id].actual=Math.min(contadores[p.id].total||999,contadores[p.id].actual+1);
+          await saveContadores();renderPanel();};
+        crow.appendChild(btnM);crow.appendChild(disp);crow.appendChild(btnP);
+        body.appendChild(crow);
+      }
+      body.style.cursor='pointer';
+      body.onclick=()=>{
+        buildCardFace(document.getElementById('cf-front'),p,false); // reverso en frontal
+        buildCardFace(document.getElementById('cf-back'),p,true);    // prueba en trasera
+        document.getElementById('card-3d').classList.add('flipped'); // ya vista → mostrar prueba directamente
+        document.getElementById('waiting-msg').style.display='none';
+        document.getElementById('ball-burst').style.display='none';
+        document.getElementById('card-scene').style.display='block';
+        document.getElementById('flip-hint').style.display='block';
+        document.getElementById('flip-hint').textContent='Toca para ver el reverso ←';
+        document.getElementById('card-close').classList.add('show');
+        document.getElementById('card-overlay').classList.add('show');
+      };
+
+      // actions row
+      const actions=document.createElement('div');actions.className='thumb-actions';
+
+      const statusBtn=document.createElement('button');statusBtn.className='status-btn';
+      statusBtn.innerHTML=p.completada?'✓ Completada':'○ Pendiente';
+      statusBtn.onclick=async(e)=>{
+        e.stopPropagation();
+        await doToggleComplete(p.id,th,statusBtn);
+      };
+
+      const removeBtn=document.createElement('button');removeBtn.className='remove-btn';
+      removeBtn.innerHTML='✕';removeBtn.title='Devolver a la máquina';
+      removeBtn.onclick=async(e)=>{
+        e.stopPropagation();
+        if(!confirm(`¿Devolver "${p.titulo}" a la máquina? Se podrá volver a extraer.`))return;
+        try{
+          await doUnextract(p.id);
+          await loadPruebas();
+          ballsExtracted=Math.max(0,ballsExtracted-1);
+          makeBalls();settle(60);
+          updateStats();renderPanel();
+          toast('Prueba devuelta a la máquina ✓');
+        }catch(err){toast('Error: '+err.message);}
+      };
+
+      actions.appendChild(statusBtn);actions.appendChild(removeBtn);
+      th.appendChild(order);th.appendChild(body);th.appendChild(actions);
+      grid.appendChild(th);
+    });
+  });
+}
+
+async function doToggleComplete(id,th,btn){
+  try{
+    const now=await toggleComplete(id);
+    th.classList.toggle('completada',!!now);
+    btn.innerHTML=now?'✓ Completada':'○ Pendiente';
+    updateStats();renderPanel();
+    if(now && completedCount()>=30) setTimeout(showWin,400);
+  }catch(err){toast('Error: '+err.message);}
+}
+
+/* ══════════════════════════════════════════════════
+   MILESTONES
+══════════════════════════════════════════════════ */
+function checkMilestones(){
+  const ext=allPruebas.filter(p=>p.extraida);
+  const contExt=ext.filter(p=>p.categoria==='continuas').length;
+  const contTotal=allPruebas.filter(p=>p.categoria==='continuas').length;
+  const d1Ext=ext.filter(p=>p.categoria==='dia1').length;
+  const d1Total=allPruebas.filter(p=>p.categoria==='dia1').length;
+  const totalExt=ext.length;
+
+  if(!milestoneShown.continuas && contExt>=contTotal && contTotal>0){
+    milestoneShown.continuas=true;
+    saveMilestones();
+    setTimeout(()=>showMilestone('continuas_done'),800);
+  } else if(!milestoneShown.dia1 && d1Ext>=d1Total && d1Total>0 && milestoneShown.continuas){
+    milestoneShown.dia1=true;
+    saveMilestones();
+    setTimeout(()=>showMilestone('dia1_done'),800);
+  } else if(!milestoneShown.all && totalExt>=allPruebas.length){
+    milestoneShown.all=true;
+    saveMilestones();
+    setTimeout(()=>showMilestone('all_done'),800);
+  }
+}
+
+async function saveMilestones(){
+  await configSetJSON('milestones_shown', milestoneShown);
+}
+
+async function loadMilestones(){
+  const v = await configGetJSON('milestones_shown', {continuas:false,dia1:false,all:false});
+  milestoneShown = v;
+}
+
+function showMilestone(key){
+  const m=MILESTONES[key];
+  document.getElementById('m-emoji').textContent=m.emoji;
+  document.getElementById('m-title').textContent=m.title;
+  document.getElementById('m-text').textContent=m.text;
+  document.getElementById('milestone-overlay').classList.add('show');
+}
+function closeMilestone(){ document.getElementById('milestone-overlay').classList.remove('show'); }
+
+function renderComodinesUsados(){
+  // Panel público: sin botón borrar
+  const lista=document.getElementById('comodin-lista');
+  if(!lista)return;
+  const disp=document.getElementById('comodin-disponibles');
+  if(disp) disp.textContent=wildcards+' disponible'+(wildcards===1?'':'s');
+  if(comodinesUsados.length===0){
+    lista.innerHTML='<div style="font-size:12px;color:var(--txt2);font-style:italic;padding:8px 0">Sin comodines usados aún</div>';
+    return;
+  }
+  lista.innerHTML='';
+  comodinesUsados.forEach((c,i)=>{
+    const tag=document.createElement('div');
+    const esNadie=c.nombre.includes('Nadie');
+    tag.style.cssText='display:flex;align-items:center;gap:6px;background:rgba(255,204,0,.1);border:1px solid rgba(255,204,0,.25);border-radius:100px;padding:4px 12px;font-size:12px;';
+    tag.innerHTML='<span style="color:var(--gold)">🃏</span>'
+      +'<span style="color:'+(esNadie?'rgba(255,255,255,.35)':'var(--txt)')+'">'+c.nombre+'</span>';
+    lista.appendChild(tag);
+  });
+}
+
+function renderComodinesAdmin(){
+  // Panel admin: con botón borrar, en elemento separado dentro del admin
+  const lista=document.getElementById('admin-comodin-usados');
+  if(!lista)return;
+  if(comodinesUsados.length===0){
+    lista.innerHTML='<div style="font-size:11px;color:var(--txt2);font-style:italic">Sin comodines usados aún</div>';
+    return;
+  }
+  lista.innerHTML='';
+  comodinesUsados.forEach((c,i)=>{
+    const tag=document.createElement('div');
+    const esNadie=c.nombre.includes('Nadie');
+    tag.style.cssText='display:flex;align-items:center;gap:6px;background:rgba(255,204,0,.08);border:1px solid rgba(255,204,0,.2);border-radius:100px;padding:3px 8px 3px 12px;font-size:11px;';
+    tag.innerHTML='<span style="color:var(--gold)">🃏</span>'
+      +'<span style="color:'+(esNadie?'rgba(255,255,255,.35)':'var(--txt)')+'">'+c.nombre+'</span>'
+      +'<button onclick="borrarComodinUsado('+i+')" style="background:rgba(255,50,50,.12);border:none;color:#ff7070;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:2px">✕</button>';
+    lista.appendChild(tag);
+  });
+}
+
+function borrarComodinUsado(i){
+  if(!confirm('¿Eliminar este comodín del registro? Se recuperará 1 comodín disponible.'))return;
+  comodinesUsados.splice(i,1);
+  wildcards++;
+  updateStats();
+  saveWildcards();
+}
+
+/* ══════════════════════════════════════════════════
+   WIN / CONFETTI
+══════════════════════════════════════════════════ */
+function showWin(){
+  document.getElementById('win-overlay').classList.add('show');
+  startConfetti();
+  setTimeout(stopConfetti, 60000);
+}
+function closeWin(){
+  document.getElementById('win-overlay').classList.remove('show');
+  stopConfetti();
+}
+
+let confettiAnim;
+function startConfetti(){
+  const cc=document.getElementById('confetti-canvas');
+  cc.width=window.innerWidth;cc.height=window.innerHeight;
+  const ctx2=cc.getContext('2d');
+  const pieces=Array.from({length:180},()=>({
+    x:Math.random()*cc.width,y:Math.random()*cc.height-cc.height,
+    r:Math.random()*6+4,d:Math.random()*80+20,
+    color:['#ff1f6e','#00e0ff','#ffcc00','#a855f7','#22dd88','#ff7020'][Math.floor(Math.random()*6)],
+    tilt:Math.random()*10-10,tiltAngle:0,tiltSpeed:Math.random()*.1+.05,
+  }));
+  function draw(){
+    ctx2.clearRect(0,0,cc.width,cc.height);
+    pieces.forEach(p=>{
+      ctx2.save();ctx2.globalAlpha=.85;ctx2.fillStyle=p.color;
+      ctx2.beginPath();
+      ctx2.ellipse(p.x+p.tilt,p.y,p.r/2,p.r,p.tiltAngle,0,Math.PI*2);
+      ctx2.fill();ctx2.restore();
+      p.y+=Math.cos(p.d)+2;p.x+=Math.sin(p.tiltAngle)*.5;
+      p.tiltAngle+=p.tiltSpeed;p.tilt=Math.sin(p.tiltAngle)*12;
+      if(p.y>cc.height){p.y=-10;p.x=Math.random()*cc.width;}
+    });
+    confettiAnim=requestAnimationFrame(draw);
+  }
+  draw();
+}
+function stopConfetti(){ cancelAnimationFrame(confettiAnim); document.getElementById('confetti-canvas').getContext('2d').clearRect(0,0,9999,9999); }
+
+/* ══════════════════════════════════════════════════
+   ROULETTE
+══════════════════════════════════════════════════ */
+function showRoulette(){document.getElementById('roulette-overlay').classList.add('show');}
+function closeRoulette(){document.getElementById('roulette-overlay').classList.remove('show');pendingCompletarId=null;}
+
+let rouletteInterval;
+function spinRoulette(){
+  document.getElementById('roulette-spin').disabled=true;
+  const names=ASISTENTES;
+  const forced=forzarComodin||null;
+
+  // Siempre animar la ruleta
+  let i=Math.floor(Math.random()*names.length);
+  let spins=0;
+  const maxSpins=forced ? 28+Math.floor(Math.random()*8) : 30+Math.floor(Math.random()*20);
+
+  clearInterval(rouletteInterval);
+  rouletteInterval=setInterval(()=>{
+    const name=names[i%names.length];
+    const isNadie=name==='Nadie 😢';
+    const disp=document.getElementById('roulette-display');
+    disp.textContent=name;
+    disp.className='roulette-display'+(isNadie?' nobody':'');
+    disp.style.color=isNadie?'rgba(255,255,255,.25)':'#fff';
+    i++;spins++;
+
+    // Frenar progresivamente
+    const delay=60+spins*2.5;
+
+    if(spins>=maxSpins){
+      clearInterval(rouletteInterval);
+      // Si hay forzado, terminar en el nombre correcto
+      if(forced){
+        const idx=names.indexOf(forced);
+        const finalName=idx>=0?forced:names[(i-1)%names.length];
+        const isN=finalName.includes('Nadie');
+        disp.textContent=finalName;
+        disp.style.color=isN?'rgba(255,255,255,.25)':'#fff';
+        rouletteResult=finalName;
+        forzarComodin=null;
+        saveForzarComodin();
+      } else {
+        rouletteResult=names[(i-1)%names.length];
+      }
+      document.getElementById('roulette-spin').disabled=false;
+      document.getElementById('roulette-spin').textContent='✓ Confirmar ayuda';
+      document.getElementById('roulette-spin').onclick=confirmRoulette;
+    }
+  },80);
+}
+
+async function confirmRoulette(){
+  closeRoulette();
+  wildcards=Math.max(0,wildcards-1);
+  const nombre=rouletteResult||'?';
+  comodinesUsados.push({nombre});
+  updateStats();
+  saveWildcards();
+  if(nombre&&!nombre.includes('Nadie')){
+    toast('🃏 '+nombre+' te ayudará — ¡a por ello!');
+  } else {
+    toast('😢 Nadie te ayuda esta vez… ¡a por ello solo!');
+  }
+  // completar la prueba con comodín
+  if(pendingCompletarId){
+    try{
+      await toggleComplete(pendingCompletarId, true, rouletteResult||''); // uso_comodin=true + quien
+      await loadPruebas();
+      updateStats();renderPanel();
+      if(completedCount()>=30) setTimeout(showWin,400);
+    }catch(e){toast('Error: '+e.message);}
+    pendingCompletarId=null;
+  }
+  document.getElementById('roulette-spin').textContent='🎰 GIRAR';
+  document.getElementById('roulette-spin').onclick=spinRoulette;
+}
+
+/* ══════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════ */
+function startDrop(){
+  if(document.body.classList.contains('locked')){showUnlock();return;}
+  if(animating)return;
+  if(remainingCount()===0){toast('¡Todas las pruebas han salido!');return;}
+  if(tiradasDisp-tiradasUsadas<=0){toast('Sin tiradas disponibles — pide al admin que habilite más 🔒');return;}
+  animating=true;grabbed=null;wireLen=0;phase='dropping';
+}
+
+document.addEventListener('keydown',e=>{
+  const tag=document.activeElement?.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
+  if(e.key==='ArrowLeft'){e.preventDefault();keys.l=true;}
+  if(e.key==='ArrowRight'){e.preventDefault();keys.r=true;}
+  if(e.key===' '||e.key==='Enter'){e.preventDefault();startDrop();}
+});
+document.addEventListener('keyup',e=>{
+  const tag=document.activeElement?.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
+  if(e.key==='ArrowLeft')keys.l=false;
+  if(e.key==='ArrowRight')keys.r=false;
+});
+function bindBtn(id,k){
+  const el=document.getElementById(id);if(!el)return;
+  el.addEventListener('mousedown',()=>{if(k)keys[k]=true;else startDrop();});
+  el.addEventListener('touchstart',e=>{e.preventDefault();if(k)keys[k]=true;else startDrop();},{passive:false});
+  el.addEventListener('mouseup',()=>{if(k)keys[k]=false;});
+  el.addEventListener('mouseleave',()=>{if(k)keys[k]=false;});
+  el.addEventListener('touchend',()=>{if(k)keys[k]=false;});
+}
+bindBtn('btn-l','l');bindBtn('btn-r','r');bindBtn('btn-drop',null);
+
+/* ══════════════════════════════════════════════════
+   STATS & UTILS
+══════════════════════════════════════════════════ */
+function updateStats(){
+  document.getElementById('s-active').textContent=extractedCount()-completedCount();
+  document.getElementById('s-done').textContent=completedCount();
+  document.getElementById('s-rem').textContent=remainingCount();
+  document.getElementById('s-wild').textContent=wildcards;
+  document.getElementById('s-tiradas').textContent=Math.max(0,tiradasDisp-tiradasUsadas);
+  // botón usar comodín: desactivar si no hay
+  const btn=document.getElementById('usar-comodin-btn');
+  if(btn){ btn.disabled=wildcards<=0; btn.style.opacity=wildcards>0?'1':'.35'; btn.style.cursor=wildcards>0?'pointer':'not-allowed'; }
+  renderComodinesUsados();
+}
+
+let toastT;
+function toast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;
+  el.classList.add('show');clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+/* ══════════════════════════════════════════════════
+   ADMIN PANEL
+══════════════════════════════════════════════════ */
+function showAdminPanel(){
+  if(!adminUnlocked){
+    const clave=prompt('Contraseña admin:');
+    if(clave===null||clave===''){return;}
+    if(clave!==TIRADAS_PASSWORD){toast('Contraseña incorrecta');return;}
+    adminUnlocked=true;
+  }
+  try {
+    renderAdminPanel();
+  } catch(err) {
+    console.error('ERROR renderAdminPanel:', err);
+    toast('Error: ' + err.message);
+    return;
+  }
+  document.getElementById('admin-overlay').classList.add('show');
+  document.getElementById('lock-overlay').style.display='none';
+}
+
+function closeAdminPanel(){
+  document.getElementById('admin-overlay').classList.remove('show');
+  // Restaurar lock-overlay
+  if(document.body.classList.contains('locked')){
+    document.getElementById('lock-overlay').style.display='';
+  }
+}
+
+
+
+function renderAdminPanel(){
+  try {
+  // Tiradas
+  document.getElementById('admin-tiradas-disp').textContent=Math.max(0,tiradasDisp-tiradasUsadas);
+  document.getElementById('admin-tiradas-used').textContent=tiradasUsadas;
+
+  // Próxima prueba
+  const ordered=allPruebas.filter(p=>!p.extraida).sort((a,b)=>{
+    const order={continuas:0,dia1:1,dia2:2};
+    return order[a.categoria]-order[b.categoria]||a.orden-b.orden;
+  });
+  // El label de próxima se actualiza en renderDragList
+
+  // Render drag list
+  renderDragList();
+
+  // Select borrar prueba
+  const delSel=document.getElementById('del-prueba-sel');
+  if(delSel){
+    delSel.innerHTML='';
+    allPruebas.slice().sort((a,b)=>a.orden-b.orden).forEach(p=>{
+      const o=document.createElement('option');
+      o.value=p.id;
+      const extraida=p.extraida?'[✓] ':'';
+      o.textContent=extraida+'#'+p.orden+' '+p.emoji+' '+p.titulo;
+      delSel.appendChild(o);
+    });
+  }
+
+  // Select posición nueva prueba
+  const posSel=document.getElementById('new-pos');
+  if(posSel){
+    posSel.innerHTML='<option value="0">📍 Al final</option>';
+    const remaining=allPruebas.filter(p=>!p.extraida).sort((a,b)=>a.orden-b.orden);
+    remaining.forEach((p,i)=>{
+      const o=document.createElement('option');
+      o.value=p.id; // insertar ANTES de esta prueba
+      o.textContent='Pos '+(i+1)+' — antes de: '+p.emoji+' '+p.titulo;
+      posSel.appendChild(o);
+    });
+  }
+
+  // Comodines disponibles
+  const wildN=document.getElementById('admin-wild-n');
+  if(wildN) wildN.textContent=wildcards;
+  renderComodinesAdmin();
+
+  // Select comodín forzado
+  const selC=document.getElementById('admin-comodin-select');
+  selC.innerHTML='<option value="">— Aleatorio (normal) —</option>';
+  ASISTENTES.forEach(a=>{
+    const opt=document.createElement('option');
+    opt.value=a; opt.textContent=a;
+    if(forzarComodin===a) opt.selected=true;
+    selC.appendChild(opt);
+  });
+  const forzInfo=document.getElementById('admin-comodin-forzado');
+  if(forzarComodin){forzInfo.textContent='Forzado: '+forzarComodin;forzInfo.style.display='block';}
+  else{forzInfo.style.display='none';}
+
+  } catch(err) {
+    console.error('ERROR en renderAdminPanel:', err);
+    toast('Error admin: ' + err.message);
+  }
+}
+
+function adminAnadirTiradas(){
+  const n=parseInt(document.getElementById('admin-tiradas-n').value);
+  if(!n||n<1||isNaN(n)){toast('Número inválido');return;}
+  tiradasDisp+=n;
+  updateStats();renderAdminPanel();saveTiradas();
+  toast('✅ '+n+' tirada'+(n>1?'s':'')+' añadida'+(n>1?'s':''));
+}
+
+
+
+/* ══════════════════════════════════════════════════
+   DRAG & DROP ORDEN DE PRUEBAS
+   Implementación simple y robusta: botones ▲▼
+   + drag nativo en desktop + tap-swap en móvil
+══════════════════════════════════════════════════ */
+let dragOrder = [];
+let dragDirty = false;
+let dragSrcIdx = null;
+
+function renderDragList(){
+  const list = document.getElementById('drag-list');
+  if(!list) return;
+  dragOrder = allPruebas.slice().sort((a,b)=>a.orden-b.orden);
+  dragDirty = false;
+  document.getElementById('btn-guardar-orden').style.display='none';
+  buildDragDOM(list);
+}
+
+function buildDragDOM(list){
+  list.innerHTML='';
+  dragOrder.forEach((p,i)=>{
+    const meta = CAT[p.categoria]||CAT.continuas;
+    const div = document.createElement('div');
+    div.className='drag-item'+(p.extraida?' extraida':'');
+    div.dataset.idx=i;
+    div.draggable=!p.extraida;
+
+    // Número de posición
+    const num=document.createElement('span');
+    num.className='drag-num';
+    num.textContent=i+1;
+
+    // Categoría pill
+    const cat=document.createElement('span');
+    cat.className='drag-cat';
+    cat.style.cssText='background:'+meta.bg+';color:'+meta.color+';border:1px solid '+meta.color+'33';
+    cat.textContent=meta.tag;
+
+    // Info
+    const info=document.createElement('div');
+    info.style.cssText='flex:1;min-width:0;overflow:hidden';
+    const cdat=contadores[p.id]||{activo:false,actual:0,total:0};
+    const cicon=cdat.activo?'🔢 '+cdat.actual+'/'+cdat.total:'🔢';
+    info.innerHTML='<div class="drag-title" style="font-size:10px;font-weight:700">'+p.emoji+' '+p.titulo
+      +'<span onclick="event.stopPropagation();adminContador('+p.id+')" '
+      +'style="margin-left:6px;font-size:9px;opacity:.6;cursor:pointer;background:rgba(0,224,255,.1);'
+      +'border-radius:4px;padding:1px 5px;border:1px solid rgba(0,224,255,.2);color:var(--neon2)">'
+      +cicon+'</span></div>'
+      +'<div class="drag-desc" style="font-size:7px;color:rgba(150,160,200,.7);margin-top:1px">'+p.descripcion+'</div>';
+
+    // Selector de categoría + botón editar (solo si no extraída)
+    if(!p.extraida){
+      const catSel=document.createElement('select');
+      catSel.style.cssText='background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:2px 4px;font-size:9px;font-family:var(--fb);margin-top:3px;width:100%';
+      ['continuas','dia1','dia2','sorpresa'].forEach(c=>{
+        const o=document.createElement('option');
+        o.value=c;
+        o.textContent={continuas:'🔁 Continua',dia1:'☀️ Día 1',dia2:'🌙 Día 2',sorpresa:'✨ Sorpresa'}[c];
+        if(p.categoria===c) o.selected=true;
+        catSel.appendChild(o);
+      });
+      catSel.onchange=async(e)=>{
+        e.stopPropagation();
+        await adminCambiarCategoria(p.id, e.target.value);
+      };
+      info.appendChild(catSel);
+
+      // Fila editar + mover a posición
+      const editRow=document.createElement('div');
+      editRow.style.cssText='display:flex;gap:4px;margin-top:4px;align-items:center';
+
+      const editBtn=document.createElement('button');
+      editBtn.textContent='✏️ Editar';
+      editBtn.style.cssText='background:rgba(0,224,255,.08);border:1px solid rgba(0,224,255,.2);color:var(--neon2);border-radius:6px;padding:2px 7px;font-size:9px;cursor:pointer;white-space:nowrap';
+      editBtn.onclick=(e)=>{e.stopPropagation();openEditForm(p,div);};
+
+      const moverLabel=document.createElement('span');
+      moverLabel.style.cssText='font-size:9px;color:var(--txt2);white-space:nowrap';
+      moverLabel.textContent='→ pos:';
+
+      const moverInput=document.createElement('input');
+      moverInput.type='number';moverInput.min='1';moverInput.placeholder='#';
+      moverInput.style.cssText='width:38px;background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:2px 4px;font-size:9px;font-family:var(--fb)';
+      moverInput.onclick=(e)=>e.stopPropagation();
+
+      const moverBtn=document.createElement('button');
+      moverBtn.textContent='↕';
+      moverBtn.title='Mover a esta posición';
+      moverBtn.style.cssText='background:rgba(255,204,0,.08);border:1px solid rgba(255,204,0,.2);color:var(--gold);border-radius:6px;padding:2px 7px;font-size:9px;cursor:pointer';
+      moverBtn.onclick=async(e)=>{
+        e.stopPropagation();
+        const pos=parseInt(moverInput.value);
+        if(!pos||pos<1){toast('Escribe un número de posición');return;}
+        await adminMoverPrueba(p.id, pos);
+      };
+
+      editRow.appendChild(editBtn);
+      editRow.appendChild(moverLabel);
+      editRow.appendChild(moverInput);
+      editRow.appendChild(moverBtn);
+      info.appendChild(editRow);
+    }
+
+    // Botones ▲▼ al lado
+    const btns=document.createElement('div');
+    btns.className='drag-btns';
+    if(!p.extraida){
+      const up=document.createElement('button');
+      up.textContent='▲'; up.title='Subir';
+      up.onclick=(e)=>{e.stopPropagation();moveItem(i,-1);};
+      if(i===0||allPrevExtracted(i)) up.style.opacity='0.2';
+
+      const dn=document.createElement('button');
+      dn.textContent='▼'; dn.title='Bajar';
+      dn.onclick=(e)=>{e.stopPropagation();moveItem(i,+1);};
+      if(i===dragOrder.length-1||allNextExtracted(i)) dn.style.opacity='0.2';
+
+      btns.appendChild(up);
+      btns.appendChild(dn);
+    }
+
+    div.appendChild(num);
+    div.appendChild(cat);
+    div.appendChild(info);
+    div.appendChild(btns);
+
+    // Drag desktop
+    if(!p.extraida){
+      div.addEventListener('dragstart',e=>{
+        dragSrcIdx=i;
+        div.classList.add('dragging');
+        e.dataTransfer.effectAllowed='move';
+        e.dataTransfer.setData('text/plain',i);
+      });
+      div.addEventListener('dragend',()=>{
+        div.classList.remove('dragging');
+        list.querySelectorAll('.drag-item').forEach(el=>el.classList.remove('drag-over'));
+      });
+      div.addEventListener('dragover',e=>{
+        e.preventDefault();
+        if(dragSrcIdx===i) return;
+        list.querySelectorAll('.drag-item').forEach(el=>el.classList.remove('drag-over'));
+        div.classList.add('drag-over');
+      });
+      div.addEventListener('drop',e=>{
+        e.preventDefault();
+        div.classList.remove('drag-over');
+        if(dragSrcIdx===null||dragSrcIdx===i) return;
+        swapToPosition(dragSrcIdx,i);
+        dragSrcIdx=null;
+      });
+    }
+
+    list.appendChild(div);
+  });
+}
+
+function allPrevExtracted(i){
+  // Todos los anteriores están extraídos → no puede subir más
+  for(let j=i-1;j>=0;j--){ if(!dragOrder[j].extraida) return false; }
+  return true;
+}
+function allNextExtracted(i){
+  for(let j=i+1;j<dragOrder.length;j++){ if(!dragOrder[j].extraida) return false; }
+  return true;
+}
+
+function moveItem(i, dir){
+  // Encontrar el siguiente/anterior no-extraído en esa dirección
+  let target=i+dir;
+  while(target>=0&&target<dragOrder.length&&dragOrder[target].extraida) target+=dir;
+  if(target<0||target>=dragOrder.length) return;
+  swapToPosition(i,target);
+}
+
+function swapToPosition(fromIdx, toIdx){
+  if(fromIdx===toIdx) return;
+  const item=dragOrder.splice(fromIdx,1)[0];
+  dragOrder.splice(toIdx,0,item);
+  // Reasignar ordenes
+  dragOrder.forEach((p,i)=>{ p._newOrden=i+1; });
+  dragDirty=true;
+  const list=document.getElementById('drag-list');
+  buildDragDOM(list);
+  document.getElementById('btn-guardar-orden').style.display='block';
+  // Label próxima
+  const next=dragOrder.filter(p=>!p.extraida)[0];
+  if(next) document.getElementById('admin-next-prueba').textContent='▶ Siguiente: '+next.emoji+' '+next.titulo+' ['+CAT[next.categoria].tag+']';
+}
+
+async function adminCambiarCategoria(id, nuevaCat){
+  try{
+    const res=await fetch('/api/pruebas/'+id+'/categoria',{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({categoria:nuevaCat})
+    });
+    if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
+    const p=allPruebas.find(x=>x.id===id);
+    if(p) p.categoria=nuevaCat;
+    renderPanel();
+    renderDragList();
+    toast('Categoría actualizada ✓');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+async function adminAnadirPrueba(){
+  const emoji=document.getElementById('new-emoji').value.trim()||'🎯';
+  const cat=document.getElementById('new-cat').value;
+  const titulo=document.getElementById('new-titulo').value.trim();
+  const desc=document.getElementById('new-desc').value.trim();
+  const posVal=document.getElementById('new-pos')?.value||'0';
+  if(!titulo){toast('Escribe un título');return;}
+  if(!desc){toast('Escribe una descripción');return;}
+  try{
+    const res=await fetch('/api/pruebas',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({categoria:cat,titulo,descripcion:desc,emoji,insertarAntesDe:posVal==='0'?null:parseInt(posVal)})
+    });
+    if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
+    document.getElementById('new-emoji').value='';
+    document.getElementById('new-titulo').value='';
+    document.getElementById('new-desc').value='';
+    await loadPruebas();
+    makeBalls();settle(60);
+    updateStats();renderPanel();renderDragList();
+    renderAdminPanel();
+    toast('✅ Prueba añadida');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+
+function openEditForm(p, containerDiv){
+  // Si ya hay un form abierto en este item, cerrarlo
+  const existing=containerDiv.querySelector('.edit-form-inline');
+  if(existing){existing.remove();return;}
+
+  const form=document.createElement('div');
+  form.className='edit-form-inline';
+  form.style.cssText='background:rgba(0,0,20,.7);border:1px solid rgba(0,224,255,.25);border-radius:8px;padding:8px;margin-top:6px;display:flex;flex-direction:column;gap:5px';
+  form.onclick=(e)=>e.stopPropagation();
+
+  const row1=document.createElement('div');
+  row1.style.cssText='display:flex;gap:5px;align-items:center';
+  const emojiI=document.createElement('input');
+  emojiI.type='text';emojiI.value=p.emoji||'🎯';emojiI.maxLength=4;
+  emojiI.style.cssText='width:36px;background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:4px;font-size:14px;text-align:center;font-family:var(--fb)';
+  const titleI=document.createElement('input');
+  titleI.type='text';titleI.value=p.titulo;titleI.maxLength=80;
+  titleI.style.cssText='flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:4px 7px;font-size:10px;font-family:var(--fb)';
+  row1.appendChild(emojiI);row1.appendChild(titleI);
+
+  const descTA=document.createElement('textarea');
+  descTA.value=p.descripcion;descTA.rows=2;
+  descTA.style.cssText='width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(100,100,200,.25);color:var(--txt);border-radius:6px;padding:4px 7px;font-size:9px;font-family:var(--fb);resize:vertical;box-sizing:border-box';
+
+  const btnRow=document.createElement('div');
+  btnRow.style.cssText='display:flex;gap:5px';
+  const saveBtn=document.createElement('button');
+  saveBtn.textContent='💾 Guardar';
+  saveBtn.style.cssText='flex:1;background:rgba(0,224,255,.12);border:1px solid rgba(0,224,255,.25);color:var(--neon2);border-radius:6px;padding:4px;font-size:10px;cursor:pointer';
+  saveBtn.onclick=async()=>{
+    const nuevoTitulo=titleI.value.trim();
+    const nuevaDesc=descTA.value.trim();
+    const nuevoEmoji=emojiI.value.trim()||'🎯';
+    if(!nuevoTitulo){toast('El título no puede estar vacío');return;}
+    await adminEditarPrueba(p.id, nuevoTitulo, nuevaDesc, nuevoEmoji);
+    form.remove();
+  };
+  const cancelBtn=document.createElement('button');
+  cancelBtn.textContent='✕';
+  cancelBtn.style.cssText='background:rgba(255,255,255,.05);border:1px solid rgba(100,100,200,.15);color:var(--txt2);border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer';
+  cancelBtn.onclick=()=>form.remove();
+  btnRow.appendChild(saveBtn);btnRow.appendChild(cancelBtn);
+
+  form.appendChild(row1);form.appendChild(descTA);form.appendChild(btnRow);
+  containerDiv.appendChild(form);
+  titleI.focus();
+}
+
+async function adminEditarPrueba(id, titulo, descripcion, emoji){
+  try{
+    const res=await fetch('/api/pruebas/'+id+'/editar',{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clave:'LAPURI',titulo,descripcion,emoji})
+    });
+    if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
+    const data=await res.json();
+    // Actualizar local
+    const p=allPruebas.find(x=>x.id===id);
+    if(p){p.titulo=titulo;p.descripcion=descripcion;p.emoji=emoji;}
+    renderPanel();renderDragList();
+    toast('✅ Prueba actualizada');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+async function adminMoverPrueba(id, nuevaPosicion){
+  try{
+    const res=await fetch('/api/pruebas/'+id+'/mover',{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clave:'LAPURI',nuevaPosicion})
+    });
+    if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
+    await loadPruebas();
+    makeBalls();settle(60);
+    renderPanel();renderDragList();
+    toast('✅ Prueba movida a posición '+nuevaPosicion);
+  }catch(e){toast('Error: '+e.message);}
+}
+
+async function adminGuardarOrden(){
+  try{
+    const payload=dragOrder
+      .filter(p=>!p.extraida)
+      .map((p,i)=>({id:p.id, orden: dragOrder.indexOf(p)+1}));
+    const res=await fetch('/api/pruebas/reordenar',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({orden:payload})
+    });
+    const data=await res.json();
+    if(!res.ok){toast('Error: '+data.error);return;}
+    await loadPruebas();
+    dragDirty=false;
+    document.getElementById('btn-guardar-orden').style.display='none';
+    makeBalls();settle(60);
+    renderDragList();
+    toast('✅ Orden guardado');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+function adminQuitarTiradas(){
+  const n=parseInt(document.getElementById('admin-tiradas-n').value)||1;
+  const avail=tiradasDisp-tiradasUsadas;
+  const quitar=Math.min(n,avail);
+  if(quitar<=0){toast('No hay tiradas disponibles para quitar');return;}
+  tiradasDisp-=quitar;
+  updateStats();renderAdminPanel();saveTiradas();
+  toast('－'+quitar+' tirada'+(quitar>1?'s':'')+' quitada'+(quitar>1?'s':''));
+}
+
+function adminAnadirComodin(){
+  wildcards++;
+  updateStats();renderAdminPanel();saveWildcards();
+  toast('🃏 Comodín añadido — total: '+wildcards);
+}
+
+function adminQuitarComodin(){
+  if(wildcards<=0){toast('No hay comodines para quitar');return;}
+  wildcards--;
+  updateStats();renderAdminPanel();saveWildcards();
+  toast('🃏 Comodín quitado — total: '+wildcards);
+}
+
+async function adminBorrarPrueba(){
+  const sel=document.getElementById('del-prueba-sel');
+  if(!sel||!sel.value){toast('Selecciona una prueba');return;}
+  const id=parseInt(sel.value);
+  const p=allPruebas.find(x=>x.id===id);
+  if(!p){toast('No encontrada');return;}
+  if(!confirm('¿Borrar "'+p.titulo+'"? Esto es permanente.'))return;
+  try{
+    const res=await fetch('/api/pruebas/'+id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave:'LAPURI'})});
+    if(!res.ok){const d=await res.json();toast('Error: '+d.error);return;}
+    await loadPruebas();
+    makeBalls();settle(60);
+    updateStats();renderPanel();renderAdminPanel();
+    toast('🗑 Prueba borrada');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+function adminContador(id){
+  const p=allPruebas.find(x=>x.id===id);
+  if(!p) return;
+  const c=contadores[id]||{activo:false,actual:0,total:0};
+  const opciones=['1. Activar/Desactivar contador','2. Cambiar total objetivo','3. Resetear a 0'];
+  const sel=prompt(p.titulo+'\n\nContador: '+(c.activo?'ACTIVO ('+c.actual+'/'+c.total+')':'INACTIVO')+'\n\n'+opciones.join('\n')+'\n\nEscribe 1, 2 o 3:');
+  if(!sel) return;
+  if(!contadores[id]) contadores[id]={activo:false,actual:0,total:0};
+  if(sel.trim()==='1'){
+    contadores[id].activo=!contadores[id].activo;
+    if(contadores[id].activo && !contadores[id].total){
+      const t=parseInt(prompt('¿Cuántos en total? (ej: 30)'));
+      if(t>0) contadores[id].total=t;
+    }
+  } else if(sel.trim()==='2'){
+    const t=parseInt(prompt('Nuevo total objetivo:'));
+    if(t>0){contadores[id].total=t;contadores[id].activo=true;}
+  } else if(sel.trim()==='3'){
+    contadores[id].actual=0;
+  }
+  saveContadores().then(()=>{renderPanel();renderDragList();});
+}
+
+function adminForzarComodin(){
+  const sel=document.getElementById('admin-comodin-select');
+  forzarComodin=sel.value||null;
+  saveForzarComodin();
+  toast(forzarComodin?'✅ Próximo comodín forzado: '+forzarComodin:'Comodín en modo aleatorio');
+  renderAdminPanel();
+}
+
+function adminQuitarForzado(){
+  forzarComodin=null;
+  saveForzarComodin();
+  toast('Comodín vuelve a ser aleatorio');
+  renderAdminPanel();
+}
+
+async function adminReset(){
+  if(!confirm('¿Reiniciar TODA la partida? Se perderá todo el progreso.'))return;
+  const clave=prompt('Confirma con la clave admin:');
+  if(!clave)return;
+  try{
+    const res = await fetch('/api/reset',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clave})
+    });
+    if(!res.ok){
+      const err=await res.json();
+      toast('Error: '+(err.error||'clave incorrecta'));
+      return;
+    }
+    await loadPruebas();
+    clearChute();
+    balls=[];grabbed=null;wireLen=0;phase='idle';animating=false;
+    ballsExtracted=0;wildcards=0;tiradasDisp=0;tiradasUsadas=0;comodinesUsados=[];
+    forzarComodin=null;forzarPruebaId=null;
+    saveEstadoJuego();saveContadores();
+    milestoneShown={continuas:false,dia1:false,all:false};
+    saveMilestones();
+    makeBalls();settle(120);updateStats();renderPanel();
+    closeAdminPanel();
+    toast('✓ Partida reiniciada');
+  }catch(e){
+    toast('Error al reiniciar: '+e.message);
+  }
+}
+
+// habilitarTiradas: movida al panel admin
+
+async function confirmReset(){
+  if(document.body.classList.contains('locked')){showUnlock();return;}
+  const clave=prompt('Introduce la clave de reinicio:');
+  if(!clave)return;
+  try{
+    await apiFetch('/api/reset',{method:'POST',body:JSON.stringify({clave})});
+    await loadPruebas();
+    clearChute();
+    balls=[];grabbed=null;wireLen=0;phase='idle';animating=false;
+    ballsExtracted=0;wildcards=0;tiradasDisp=0;tiradasUsadas=0;comodinesUsados=[];
+    milestoneShown={continuas:false,dia1:false,all:false};
+    saveMilestones();
+    makeBalls();settle(120);updateStats();renderPanel();
+    toast('Partida reiniciada ✓');
+  }catch(e){toast('Clave incorrecta o error.');}
+}
+
+/* ══════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════ */
+async function init(){
+  try{
+    // 1. Cargar pruebas y estado guardado en paralelo
+    await Promise.all([loadPruebas(), loadContadores(), loadEstadoJuego(), loadMilestones()]);
+    // 2. ballsExtracted viene de loadEstadoJuego — solo usar BD como fallback si es 0
+    if(ballsExtracted===0) ballsExtracted=extractedCount();
+    // 3. Construir máquina
+    makeBalls();settle(120);
+    updateStats();renderPanel();
+    document.getElementById('loading').classList.add('hidden');
+    // 4. Welcome solo si no hay nada extraído aún
+    if(ballsExtracted===0){
+      setTimeout(()=>document.getElementById('welcome-overlay').classList.add('show'),400);
+    }
+    initUnlockInput();
+    requestAnimationFrame(gameLoop);
+
+  }catch(e){
+    document.getElementById('loading').innerHTML='<h2 style="color:var(--neon)">ERROR</h2><p style="color:var(--txt2)">'+e.message+'</p>';
+  }
+}
+init();
+</script>
+</body>
+</html>
